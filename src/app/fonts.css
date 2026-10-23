@@ -1,0 +1,60 @@
+/*
+ * Brand fonts. Source files are in public/font/. The browser loads the
+ * Latin-subset .woff2 files in public/font/web/, generated from them
+ * (Helvetica Neue is unpacked from the .ttc collection, which browsers can't
+ * load directly). If the source fonts change, regenerate the .woff2 files.
+ *
+ *   --font-display  Acumin Variable Concept: headings, numbers, buttons
+ *   --font-body     Helvetica Neue: running text, labels
+ */
+
+@font-face {
+  font-family: "Acumin Variable Concept";
+  src: url("/font/web/acumin-variable.woff2") format("woff2-variations"),
+    url("/font/web/acumin-variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 50% 115%;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-400.woff2") format("woff2");
+  font-weight: 100 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-400-italic.woff2") format("woff2");
+  font-weight: 100 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-500.woff2") format("woff2");
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-700.woff2") format("woff2");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-700-italic.woff2") format("woff2");
+  font-weight: 700 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --font-display: "Acumin Variable Concept";
+  --font-body: "Helvetica Neue Brand";
+}
