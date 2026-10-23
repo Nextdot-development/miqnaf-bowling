@@ -6,6 +6,8 @@ import type { GamePhase } from "@/types/game";
 export interface SceneTimeline {
   phase: GamePhase;
   rollStartedAt: number | null;
+  /** Swipe progress 0..1 while the player drags the ball (see aimOffset). */
+  aim: MutableRefObject<number>;
 }
 
 /**

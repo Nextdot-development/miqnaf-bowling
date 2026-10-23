@@ -54,6 +54,8 @@ For each reference, the reviewer should confirm which statement(s) it supports a
 - ☐ **Intro tagline**: "Roll the right ball. Break the barriers. Explore coverage in CABP." Promotional wording pending approval.
 - ☐ **Game title**: "Nafithromycin CABP Bowling Game".
 - ☐ **Product logo**: the MIQNAF® logo with "Nafithromycin tablet 400 mg" (supplied artwork, background made transparent) appears in the header and on the intro screen. Confirm placement, and that showing it next to the comparator content is acceptable.
+- ☐ **Sound effects**: `public/soundeffects/` holds two recordings named `freesound_community-…` (bowling ball roll, bowling strike). Confirm their licence covers use at the event and whether attribution is needed.
+- ☐ **Sound on by default**: the original brief asked for sound OFF by default; the client asked for it ON. Audio still only starts after the first tap, and the header switch turns it off.
 - ☐ **Fonts**: confirm the Acumin and Helvetica Neue licences cover embedding in this web/kiosk build.
 - ☐ **Ball colours**: interface identifiers only (brand palette). Confirm they do not imply potency.
 - ☐ **Coverage board "Full reference matrix" view**: this shows outcomes for balls not yet rolled, but only after the user explicitly switches to it. Confirm this is acceptable.

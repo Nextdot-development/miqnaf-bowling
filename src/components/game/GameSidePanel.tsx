@@ -5,16 +5,14 @@ import { RefreshCw, Table2 } from "lucide-react";
 import { DRUGS } from "@/data/gameData";
 import { allDrugsRolled } from "@/lib/promptLogic";
 import { BALL_TRAVEL_MS } from "@/lib/timing";
-import { BALL_COLORS } from "@/lib/drugVisuals";
-import type { CSSProperties } from "react";
-import type { GameState, PinNumber } from "@/types/game";
+import type { DrugId, GameState, PinNumber } from "@/types/game";
+import { BallSelector } from "./BallSelector";
 import { ResultPanel } from "./ResultPanel";
-import { RollButton } from "./RollButton";
 import { StepIndicator } from "./StepIndicator";
 
 interface GameSidePanelProps {
   state: GameState;
-  onRoll: () => void;
+  onSelectDrug: (drug: DrugId) => void;
   onChooseAnother: () => void;
   onOpenCoverage: () => void;
   onOpenPin: (n: PinNumber) => void;
@@ -22,14 +20,14 @@ interface GameSidePanelProps {
 
 export function GameSidePanel({
   state,
-  onRoll,
+  onSelectDrug,
   onChooseAnother,
   onOpenCoverage,
   onOpenPin,
 }: GameSidePanelProps) {
   const reduce = useReducedMotion();
   const { phase, selectedDrug, result } = state;
-  const step = phase === "rolling" ? 3 : phase === "result" ? 4 : 1;
+  const step = phase === "rolling" ? 3 : phase === "result" ? 4 : selectedDrug ? 2 : 1;
   const drug = selectedDrug ? DRUGS[selectedDrug] : null;
   const suggestBoard = phase === "result" && allDrugsRolled(state.rolledDrugs) && !state.coverageVisited;
 
@@ -51,33 +49,15 @@ export function GameSidePanel({
         <AnimatePresence mode="wait" initial={false}>
           {phase === "selecting" && (
             <motion.div key="select" {...fade} className="space-y-5">
-              <h2 className="text-3xl font-black leading-tight text-brand-navy sm:text-[2.6rem]">
-                Tap a ball to select, then tap ROLL.
+              <h2 className="text-3xl font-black leading-tight text-brand-navy kiosk:text-[2.1rem]">
+                Tap a ball, then swipe it up the lane.
               </h2>
-              {drug ? (
-                <div
-                  className="flex items-center gap-4 rounded-2xl border-2 border-brand-gold bg-surface-tint px-5 py-4"
-                  style={{ "--ball": BALL_COLORS[drug.id] } as CSSProperties}
-                >
-                  <span className="ball-swatch h-14 w-14 sm:h-16 sm:w-16" aria-hidden />
-                  <span>
-                    <span className="eyebrow block text-[color-mix(in_srgb,var(--brand-gold)_40%,black)]">
-                      Selected ball
-                    </span>
-                    <span className="block font-display text-2xl font-black text-brand-navy sm:text-3xl">
-                      {drug.name}
-                    </span>
-                    <span className="block font-semibold text-ink-muted">{drug.drugClass}</span>
-                  </span>
-                </div>
-              ) : (
-                <p
-                  id="roll-hint"
-                  className="rounded-2xl border-2 border-dashed border-line px-5 py-6 text-lg font-semibold text-ink-muted"
-                >
-                  No ball selected yet. Choose one of the three balls below the lane.
-                </p>
-              )}
+              <BallSelector
+                phase={phase}
+                selectedDrug={selectedDrug}
+                rolledDrugs={state.rolledDrugs}
+                onSelect={onSelectDrug}
+              />
               <p className="text-lg leading-relaxed text-ink-muted">
                 The ball&apos;s path and speed are identical for all three. Only the pins that react differ.
               </p>
@@ -119,9 +99,9 @@ export function GameSidePanel({
         </AnimatePresence>
       </div>
 
-      <div className="mt-6 space-y-3">
-        {phase === "result" ? (
-          suggestBoard ? (
+      {phase === "result" && (
+        <div className="mt-6 space-y-3">
+          {suggestBoard ? (
             <>
               <button type="button" onClick={onOpenCoverage} className="btn-primary w-full py-5 text-xl normal-case tracking-normal sm:text-2xl">
                 <Table2 className="h-7 w-7" aria-hidden /> Open the coverage board
@@ -134,11 +114,9 @@ export function GameSidePanel({
             <button type="button" onClick={onChooseAnother} className="btn-primary w-full py-5 text-xl normal-case tracking-normal sm:text-2xl">
               <RefreshCw className="h-6 w-6" strokeWidth={3} aria-hidden /> Choose another ball
             </button>
-          )
-        ) : (
-          <RollButton canRoll={phase === "selecting" && !!selectedDrug} rolling={phase === "rolling"} onRoll={onRoll} />
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

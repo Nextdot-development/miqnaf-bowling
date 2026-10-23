@@ -3,8 +3,8 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { BALL_RADIUS } from "@/lib/laneLayout";
-import { ballPose } from "@/lib/rollAnimation";
+import { BALL_RADIUS, BALL_START_Z } from "@/lib/laneLayout";
+import { aimOffset, ballPose } from "@/lib/rollAnimation";
 import { createBallTexture } from "./sceneAssets";
 import { elapsedMs, useSceneTimeline } from "./sceneClock";
 
@@ -60,11 +60,15 @@ export function BowlingBall({ color }: BowlingBallProps) {
   );
 
   useFrame(() => {
-    const pose = ballPose(elapsedMs(timeline.current, performance.now()));
+    const t = timeline.current;
+    const elapsed = elapsedMs(t, performance.now());
+    const pose = ballPose(elapsed);
     if (!group.current || !spinner.current) return;
+    // The swipe nudges the ball forward; that offset fades out as the roll starts.
+    const z = pose.z - aimOffset(t.phase, elapsed, t.aim.current);
     group.current.visible = pose.visible;
-    group.current.position.set(pose.x, pose.y, pose.z);
-    spinner.current.rotation.x = pose.spin;
+    group.current.position.set(pose.x, pose.y, z);
+    spinner.current.rotation.x = -(BALL_START_Z - z) / BALL_RADIUS;
   });
 
   return (

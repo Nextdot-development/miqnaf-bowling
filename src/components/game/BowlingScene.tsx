@@ -2,7 +2,7 @@
 
 import { Environment, Lightformer } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import { CAMERA, FRONT_ROW_Z, verticalFovFor } from "@/lib/laneLayout";
 import { ballColor } from "@/lib/drugVisuals";
@@ -24,6 +24,10 @@ export interface BowlingSceneProps {
   onContextLost?: () => void;
   /** Called once the WebGL renderer is up. */
   onReady?: () => void;
+  /** Swipe progress 0..1, written by the swipe overlay. */
+  aimRef: MutableRefObject<number>;
+  /** True while the player is dragging the ball (renders every frame). */
+  aiming: boolean;
 }
 
 /** Fixed camera: same position and framing for every roll. */
@@ -126,17 +130,18 @@ function Lights() {
 }
 
 export default function BowlingScene(props: BowlingSceneProps) {
-  const { phase, ballDrug, outcomeDrug, rollStartedAt, interactive, onPinSelect, onContextLost, onReady } = props;
+  const { phase, ballDrug, outcomeDrug, rollStartedAt, interactive, onPinSelect, onContextLost, onReady, aimRef, aiming } =
+    props;
 
-  const timeline = useRef<SceneTimeline>({ phase, rollStartedAt });
-  timeline.current = { phase, rollStartedAt };
+  const timeline = useRef<SceneTimeline>({ phase, rollStartedAt, aim: aimRef });
+  timeline.current = { phase, rollStartedAt, aim: aimRef };
 
   return (
     <SceneTimelineContext.Provider value={timeline}>
       <Canvas
         shadows="soft"
         dpr={[1, 2]}
-        frameloop={phase === "rolling" ? "always" : "demand"}
+        frameloop={phase === "rolling" || aiming ? "always" : "demand"}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         camera={{ position: [...CAMERA.position], fov: 30 }}
         className="!absolute inset-0"
@@ -146,7 +151,7 @@ export default function BowlingScene(props: BowlingSceneProps) {
         }}
       >
         <CameraRig />
-        <Invalidator deps={[phase, ballDrug, outcomeDrug, rollStartedAt]} />
+        <Invalidator deps={[phase, ballDrug, outcomeDrug, rollStartedAt, aiming]} />
         <ContextLossWatcher onLost={onContextLost} />
         <Lights />
         <BowlingLane />

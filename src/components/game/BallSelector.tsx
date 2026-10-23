@@ -31,7 +31,7 @@ export function BallSelector({ phase, selectedDrug, rolledDrugs, onSelect }: Bal
       <h2 id="ball-select-heading" className="sr-only">
         Choose a ball
       </h2>
-      <ul className="grid grid-cols-1 gap-4 pt-3 sm:grid-cols-3 sm:gap-5" role="list">
+      <ul className="grid grid-cols-1 gap-4 pt-3" role="list">
         {DRUG_ORDER.map((id) => (
           <li key={id} className="h-full">
             <BallCard

@@ -37,7 +37,8 @@ export const initialGameState: GameState = {
   rollInstant: false,
   result: null,
   usedPrompts: [],
-  soundOn: false,
+  // On by default (client request); audio starts on the first tap.
+  soundOn: true,
   coverageOpen: false,
   coverageVisited: false,
   coverageMode: "session",
@@ -73,8 +74,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, phase: "selecting", sessionStarted: true };
 
     case "NEW_SESSION":
-      // Keep the participant's sound preference; clear everything else.
-      return { ...initialGameState, soundOn: state.soundOn, phase: "intro" };
+      // Fresh start for the next participant, with sound back on.
+      return { ...initialGameState, phase: "intro" };
 
     case "SELECT_DRUG":
       if (state.phase === "intro" || state.phase === "rolling") return state;

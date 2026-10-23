@@ -70,7 +70,7 @@ export function BallCard({ drug, selected, emphasised, badge, disabled, muted, o
       <span className="flex items-center gap-3 sm:gap-4">
         <span className="ball-swatch h-12 w-12 sm:h-16 sm:w-16" aria-hidden />
         <span className="min-w-0">
-          <span className="block font-display text-xl font-black leading-tight text-brand-navy lg:text-2xl 2xl:text-[1.6rem]">
+          <span className="block font-display text-xl font-medium leading-tight text-brand-navy lg:text-2xl 2xl:text-[1.6rem]">
             {drug.name}
           </span>
           <span className={`block font-bold ${ACCENT_TEXT[drug.id]}`}>{drug.drugClass}</span>

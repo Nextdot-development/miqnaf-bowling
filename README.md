@@ -37,7 +37,9 @@ This plays the full flow in a headless browser, saves screenshots of each state 
 
 ## How it works
 
-**Game flow:** intro → pick a ball → ROLL → watch (about 2 s of ball travel, then the pins settle) → result → pathogen cards / coverage board → pick another ball. "Start new session" (the ↺ button in the header) is the only action that clears session history.
+**Game flow:** intro → pick a ball → swipe the ball up the lane → watch (about 2 s of ball travel, then the pins settle) → result → pathogen cards / coverage board → pick another ball. "Start new session" (the ↺ button in the header) is the only action that clears session history.
+
+**Swipe to roll:** there is no ROLL button. The player swipes the ball up the lane with a finger (or drags with a mouse); the ball follows the finger and is released into the roll (`src/components/game/SwipeToRoll.tsx`). A tap, a short drag, or a sideways or downward swipe does not roll. The gesture only starts the roll: its strength never changes the ball's path, speed or the outcome. The small forward nudge while dragging fades out within 0.22 s of release (`aimOffset` in `rollAnimation.ts`). Keyboard users can focus the ball and press Enter or Space.
 
 **Single source of truth:** every drug, pin, outcome, basis line, prompt and the disclaimer live in `src/data/`. The outcome matrix exists only in `PINS[].outcome` in `src/data/gameData.ts`. Counters, standing-pin lists, pin animations and the coverage board are all derived from it through `src/lib/gameLogic.ts`. `src/lib/outcomeValidation.ts` checks the expected totals (5 / 5 / 8) and standing pins (2, 3, 4).
 
@@ -70,16 +72,17 @@ src/
 
 - **Colours:** the three brand colours (`#9A1F24` red, `#28397F` navy, `#E7A900` gold) and the neutral tones are defined once in `src/lib/brand.ts`. They are injected as CSS custom properties (`--brand-red`, `--brand-navy`, `--brand-gold`, …) and mapped to Tailwind (`bg-brand-gold`, `text-brand-navy`, …). Change a colour there and it updates everywhere, including the 3D scene.
 - **Fonts:** brand fonts from `public/font/`: Acumin Variable Concept for headings, numbers and buttons (`--font-display`), Helvetica Neue for body text (`--font-body`). The browser loads Latin-subset `.woff2` copies from `public/font/web/` (see `src/app/fonts.css`). Check that the font licences allow web/kiosk embedding.
+- **Favicon:** `public/favicon.ico` (16 to 256 px) and `public/apple-touch-icon.png` are the red, orange and yellow arrow mark from the MIQNAF logo (the full wordmark is unreadable at 16 px). They are linked with a version query (`?v=2`, set in `src/lib/brandAssets.ts`) because browsers cache favicons by URL; bump the version whenever the icon changes.
 - **Logo:** the MIQNAF logo (`public/brand/miqnaf-logo.png`, set in `src/lib/brandAssets.ts`) appears in the header and on the intro screen. It is the supplied artwork with the background made transparent; swap in an official SVG/transparent export when available.
 
 ## Accessibility
 
-- Every control is a real button and works from the keyboard, including the pin labels on the lane, ball cards, ROLL, coverage board rows and dialogs. Focus states are visible.
+- Every control is a real button and works from the keyboard, including the pin labels on the lane, ball cards, the ball itself (Enter or Space rolls it), coverage board rows and dialogs. Focus states are visible.
 - Dialogs trap focus, close on Escape or a backdrop click, and return focus to where it was.
 - A polite live region announces each roll and its result. A screen-reader-only list describes the pin deck.
 - Outcomes are always shown with text and icons, never by colour alone.
 - `prefers-reduced-motion: reduce` skips the roll animation and shows the end state immediately, with the same outcome and prompts.
-- Sound is off by default. One switch controls the synthesised roll and pin sounds (Web Audio, created only after the user turns it on).
+- Sound is on by default (client request); the header switch turns it off. Browsers only allow audio after a user gesture, so audio starts on the first tap (START GAME on the kiosk). The game plays the supplied recordings in `public/soundeffects/`: the ball rolling from release, fading out as it reaches the pins, then the strike crash timed so its first hit lands exactly at impact (a little quieter when fewer pins fall). Timing lives in `src/lib/rollSound.ts`, from the same timeline as the animation. Sound is never needed to understand the result.
 - Without WebGL, a 2D lane with the same outcomes, controls and timing replaces the 3D scene automatically. The same lane also covers a lost WebGL context.
 
 ## Tests
@@ -88,7 +91,9 @@ src/
 
 - the outcome matrix: 8 unique pins, the supplied labels and rows, 5 / 5 / 8 pins down, standing pins 2, 3 and 4, and a cell-by-cell match to the supplied table
 - verbatim ball cards and disclaimer
-- the reducer: ROLL locked until a ball is chosen, no double rolls, a ball change resets the lane but keeps history, stale timers ignored, reduced-motion rolls, new-session reset
+- the reducer: rolling locked until a ball is chosen, no double rolls, a ball change resets the lane but keeps history, stale timers ignored, reduced-motion rolls, new-session reset
 - prompt logic: priority order, no repeats, prompt D eligibility, the coverage prompt shown once
-- animation: the same path and timing for every drug, and the expected end poses
-- the UI (jsdom, which runs the 2D fallback): disclaimer present on every screen, sound off by default, the full roll flow, reduced motion, keyboard use, pathogen-card reveal rules, the coverage board's two views
+- animation: the same path and timing for every drug, the expected end poses, and a bounded swipe offset that is gone shortly after release
+- swipe gestures: an upward swipe rolls; a tap, short drag, sideways or downward swipe does not
+- sound score: one knock per falling pin as it starts to fall and a thud as it lands, rattles only for standing pins, and the same ball timing for every drug
+- the UI (jsdom, which runs the 2D fallback): disclaimer present on every screen, sound on by default and switchable off, the full roll flow, reduced motion, keyboard use, pathogen-card reveal rules, the coverage board's two views

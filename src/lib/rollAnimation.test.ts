@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BALL_START_Z, FRONT_ROW_Z } from "@/lib/laneLayout";
-import { ballPose, finalPinPose, pinPose } from "@/lib/rollAnimation";
+import { AIM_BLEND_MS, AIM_REACH, aimOffset, ballPose, finalPinPose, pinPose } from "@/lib/rollAnimation";
 import { BALL_TRAVEL_MS } from "@/lib/timing";
 import type { PinNumber } from "@/types/game";
 
@@ -31,5 +31,13 @@ describe("roll animation", () => {
 
   it("pins are untouched before the ball arrives", () => {
     expect(pinPose(1, true, 1000)).toMatchObject({ angle: 0, opacity: 1 });
+  });
+
+  it("swipe offset is bounded and gone shortly after release", () => {
+    expect(aimOffset("selecting", 0, 5)).toBe(AIM_REACH);
+    expect(aimOffset("rolling", 0, 1)).toBe(AIM_REACH);
+    expect(aimOffset("rolling", AIM_BLEND_MS, 1)).toBe(0);
+    expect(aimOffset("rolling", 2000, 1)).toBe(0);
+    expect(aimOffset("result", 0, 1)).toBe(0);
   });
 });

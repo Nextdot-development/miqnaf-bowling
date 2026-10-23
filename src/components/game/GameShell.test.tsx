@@ -25,6 +25,16 @@ function startGame() {
 
 const disclaimer = () => screen.getByText(DISCLAIMER);
 
+/** Drags a pointer upwards by dy px (and sideways by dx) over the lane. */
+function swipe(zone: HTMLElement, { dy, dx = 0 }: { dy: number; dx?: number }) {
+  const x = 400;
+  const y = 400;
+  fireEvent.pointerDown(zone, { pointerId: 1, clientX: x, clientY: y });
+  fireEvent.pointerMove(zone, { pointerId: 1, clientX: x + dx / 2, clientY: y - dy / 2 });
+  fireEvent.pointerMove(zone, { pointerId: 1, clientX: x + dx, clientY: y - dy });
+  fireEvent.pointerUp(zone, { pointerId: 1, clientX: x + dx, clientY: y - dy });
+}
+
 describe("GameShell", () => {
   it("shows the disclaimer on the intro and every game state", async () => {
     render(<GameShell />);
@@ -32,7 +42,7 @@ describe("GameShell", () => {
     click(button(/start game/i));
     expect(disclaimer()).toBeVisible();
     click(button(/^Azithromycin/));
-    click(button(/^roll/i));
+    click(button(/^Roll the ball/));
     expect(disclaimer()).toBeVisible(); // rolling
     act(() => vi.advanceTimersByTime(ROLL_TOTAL_MS + 10));
     vi.useRealTimers();
@@ -50,23 +60,26 @@ describe("GameShell", () => {
     expect(screen.getAllByRole("button", { name: /^Pin \d, / })).toHaveLength(8);
   });
 
-  it("starts with sound off", async () => {
+  it("starts with sound on, and the switch turns it off", async () => {
     startGame();
-    expect(screen.getByRole("switch", { name: /sound/i })).toHaveAttribute("aria-checked", "false");
+    const toggle = screen.getByRole("switch", { name: /sound/i });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "false");
   });
 
-  it("disables ROLL until a ball is selected, then runs the full flow", async () => {
+  it("only lets the ball roll once one is picked, then runs the full flow", async () => {
     startGame();
-    const roll = screen.getByRole("button", { name: /^roll/i });
-    expect(roll).toBeDisabled();
+    const ballControl = screen.getByRole("button", { name: /^Roll the ball/ });
+    expect(ballControl).toBeDisabled();
+    expect(screen.getByText("Pick a ball below")).toBeInTheDocument();
 
     click(button(/^Azithromycin/));
-    expect(roll).toBeEnabled();
-    click(roll);
+    expect(ballControl).toBeEnabled();
+    swipe(screen.getByTestId("swipe-zone"), { dy: 160 });
 
-    // While rolling: ball cards and ROLL are locked, no result yet.
-    expect(screen.getByRole("button", { name: /^Clarithromycin/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /rolling/i })).toBeDisabled();
+    // While rolling: the ball is locked and no result is shown yet.
+    expect(screen.getByRole("button", { name: /^Roll the ball/ })).toBeDisabled();
     expect(screen.queryByText(/Pin 2 stood/)).not.toBeInTheDocument();
 
     act(() => vi.advanceTimersByTime(ROLL_TOTAL_MS + 10));
@@ -79,6 +92,25 @@ describe("GameShell", () => {
     expect(screen.getByText(/Pin 3 stood:/)).toBeInTheDocument();
     expect(screen.getByText(/Pin 4 stood:/)).toBeInTheDocument();
     expect(screen.getByText(/How often do you meet macrolide-resistant pneumococci/)).toBeInTheDocument();
+    // The result replaces the ball cards; "Choose another ball" brings them back.
+    expect(screen.queryByRole("button", { name: /^Clarithromycin/ })).not.toBeInTheDocument();
+    click(button(/choose another ball/i));
+    expect(await screen.findByRole("button", { name: /^Clarithromycin/ })).toBeEnabled();
+  });
+
+  it("does not roll on a tap, a short drag or a sideways swipe", () => {
+    startGame();
+    click(button(/^Nafithromycin/));
+    const zone = screen.getByTestId("swipe-zone");
+
+    fireEvent.click(button(/^Roll the ball/), { detail: 1 }); // a finger tap on the ball
+    swipe(zone, { dy: 10 }); // too short
+    swipe(zone, { dy: 60, dx: 200 }); // mostly sideways
+    swipe(zone, { dy: -150 }); // downwards
+
+    // Still waiting for a swipe: nothing rolled.
+    expect(screen.getByText("Swipe the ball up to roll")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Clarithromycin/ })).toBeEnabled();
   });
 
   it("reduced motion shows the end state immediately", async () => {
@@ -86,7 +118,7 @@ describe("GameShell", () => {
     mediaState.reducedMotion = true;
     startGame();
     click(button(/^Nafithromycin/));
-    click(button(/^roll/i));
+    click(button(/^Roll the ball/));
     expect(screen.getByRole("status")).toHaveTextContent("Nafithromycin: 8 of 8 pins down. No pins are standing.");
     expect(await screen.findByText("None. All eight pins fell on this roll.")).toBeInTheDocument();
   });
@@ -100,7 +132,7 @@ describe("GameShell", () => {
     await user.keyboard("{Enter}");
     screen.getByRole("button", { name: /^Clarithromycin/ }).focus();
     await user.keyboard(" ");
-    screen.getByRole("button", { name: /^roll/i }).focus();
+    screen.getByRole("button", { name: /^Roll the ball/ }).focus();
     await user.keyboard("{Enter}");
     expect(screen.getByRole("status")).toHaveTextContent("Clarithromycin: 5 of 8 pins down.");
   });
@@ -110,7 +142,7 @@ describe("GameShell", () => {
     mediaState.reducedMotion = true;
     startGame();
     click(button(/^Azithromycin/));
-    click(button(/^roll/i));
+    click(button(/^Roll the ball/));
     click(await screen.findByRole("button", { name: /^Pin 2 stood/ }));
 
     const dialog = screen.getByRole("dialog");
@@ -129,7 +161,7 @@ describe("GameShell", () => {
     mediaState.reducedMotion = true;
     startGame();
     click(button(/^Azithromycin/));
-    click(button(/^roll/i));
+    click(button(/^Roll the ball/));
     click(button(/open the coverage board/i));
 
     const table = screen.getByRole("table");

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Component, useCallback, useMemo, useState, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { pinPosition } from "@/lib/laneLayout";
 import { createProjector } from "@/lib/projection";
 import { DRUGS, PINS } from "@/data/gameData";
@@ -12,6 +12,7 @@ import type { DrugId, GamePhase, Pin, RollResult } from "@/types/game";
 import type { BowlingSceneProps } from "./BowlingScene";
 import { LaneFallback2D } from "./LaneFallback2D";
 import { PinLabelsOverlay } from "./PinLabelsOverlay";
+import { SwipeToRoll } from "./SwipeToRoll";
 
 // Three.js only runs in the browser; keep it out of the server bundle.
 const BowlingScene = dynamic(() => import("./BowlingScene"), { ssr: false });
@@ -48,6 +49,8 @@ interface GameStageProps {
   interactive: boolean;
   pinName: (pin: Pin) => string;
   onPinSelect: (pin: Pin) => void;
+  /** Start the roll (swipe gesture or keyboard). Omit to disable rolling. */
+  onRoll?: () => void;
   /** Classes for the lane itself (size / aspect). */
   className?: string;
   /** Classes for the wrapper around the lane and its pin key. */
@@ -68,6 +71,7 @@ export function GameStage({
   interactive,
   pinName,
   onPinSelect,
+  onRoll,
   className = "",
   wrapperClassName = "",
   variant = "card",
@@ -89,6 +93,12 @@ export function GameStage({
     const spacing = Math.abs(project(b.x, 0, b.z).x - project(a.x, 0, a.z).x);
     return spacing < 4.8 * rootFontPx();
   }, [stageSize.width, stageSize.height]);
+  const aimRef = useRef(0);
+  const [aiming, setAiming] = useState(false);
+  // A fresh lane (new ball picked, or back to selecting) starts at the foul line.
+  useEffect(() => {
+    if (phase !== "rolling") aimRef.current = 0;
+  }, [phase, selectedDrug]);
   const handleFail = useCallback(() => setSceneFailed(true), []);
   const handleReady = useCallback(() => setSceneReady(true), []);
 
@@ -104,6 +114,8 @@ export function GameStage({
     onPinSelect,
     onContextLost: handleFail,
     onReady: handleReady,
+    aimRef,
+    aiming,
   };
 
   return (
@@ -131,6 +143,18 @@ export function GameStage({
           interactive={interactive}
           pinName={pinName}
           onPinSelect={onPinSelect}
+        />
+      )}
+
+      {onRoll && (
+        <SwipeToRoll
+          phase={phase}
+          hasBall={selectedDrug !== null}
+          width={stageSize.width}
+          height={stageSize.height}
+          aimRef={aimRef}
+          onAimingChange={setAiming}
+          onRoll={onRoll}
         />
       )}
 

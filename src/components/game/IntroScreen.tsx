@@ -16,7 +16,7 @@ interface IntroScreenProps {
 
 const noop = () => {};
 
-const HOW_TO_PLAY = ["Pick a ball", "Tap ROLL", "Watch the pins"] as const;
+const HOW_TO_PLAY = ["Pick a ball", "Swipe it up the lane", "Watch the pins"] as const;
 
 export function IntroScreen({ onStart, pinName }: IntroScreenProps) {
   const reduce = useReducedMotion();
@@ -124,7 +124,7 @@ export function IntroScreen({ onStart, pinName }: IntroScreenProps) {
                 >
                   <span className="ball-swatch h-8 w-8 sm:h-10 sm:w-10" aria-hidden />
                   <span className="leading-tight">
-                    <span className="block font-display text-base font-black text-white sm:text-xl">{DRUGS[id].name}</span>
+                    <span className="block font-display text-base font-medium text-white sm:text-xl">{DRUGS[id].name}</span>
                     <span className="hidden text-sm text-white/70 sm:block">{DRUGS[id].drugClass}</span>
                   </span>
                 </li>

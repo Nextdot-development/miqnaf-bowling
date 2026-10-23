@@ -12,9 +12,9 @@ function rollDrug(state: GameState, drug: DrugId): GameState {
 }
 
 describe("game reducer", () => {
-  it("starts on the intro with sound off", () => {
+  it("starts on the intro with sound on", () => {
     expect(initialGameState.phase).toBe("intro");
-    expect(initialGameState.soundOn).toBe(false);
+    expect(initialGameState.soundOn).toBe(true);
   });
 
   it("cannot roll until a ball is selected", () => {
@@ -88,8 +88,8 @@ describe("game reducer", () => {
     expect(s.result).toMatchObject({ pinsDown: 5, standing: [2, 3, 4] });
   });
 
-  it("only NEW_SESSION clears session history (and keeps the sound preference)", () => {
-    let s = gameReducer(started, { type: "SET_SOUND", on: true });
+  it("only NEW_SESSION clears session history, and it turns sound back on", () => {
+    let s = gameReducer(started, { type: "SET_SOUND", on: false });
     s = rollDrug(s, "nafithromycin");
     s = gameReducer(s, { type: "CHOOSE_ANOTHER" });
     expect(s.rolledDrugs).toEqual(["nafithromycin"]);

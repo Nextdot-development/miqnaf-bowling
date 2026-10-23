@@ -1,16 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { buildSoundCues, SOUND_FILES, SOUND_ONSETS, type SoundName } from "@/lib/rollSound";
 
 /**
- * Small synthesised roll and pin sounds via the Web Audio API. Nothing is
- * created until the player turns sound on (a user gesture), and nothing
- * plays while sound is off. No audio files or network requests.
+ * Plays the supplied bowling recordings (public/soundeffects/) with the Web
+ * Audio API, so each roll is scheduled precisely against the animation.
+ *
+ * Sound is on by default. Browsers only allow audio after a user gesture, so
+ * the audio context is created (and the files decoded) on the first tap or
+ * key press, which is the START GAME tap on the kiosk.
  */
 export function useGameAudio(enabled: boolean) {
   const ctxRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<GainNode | null>(null);
-  const activeRef = useRef<AudioScheduledSourceNode[]>([]);
+  const buffersRef = useRef<Partial<Record<SoundName, AudioBuffer>>>({});
+  const loadingRef = useRef<Promise<void> | null>(null);
+  const activeRef = useRef<Set<AudioBufferSourceNode>>(new Set());
 
   const ensureContext = useCallback((): AudioContext | null => {
     if (typeof window === "undefined") return null;
@@ -21,23 +27,49 @@ export function useGameAudio(enabled: boolean) {
       if (!Ctor) return null;
       const ctx = new Ctor();
       const master = ctx.createGain();
-      master.gain.value = 0.35;
-      // Gentle limiter to avoid sudden peaks.
-      const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -18;
-      comp.ratio.value = 6;
-      master.connect(comp).connect(ctx.destination);
+      master.gain.value = 0.9;
+      master.connect(ctx.destination);
       ctxRef.current = ctx;
       masterRef.current = master;
     }
-    if (ctxRef.current.state === "suspended") void ctxRef.current.resume();
-    return ctxRef.current;
+    const ctx = ctxRef.current;
+    if (ctx.state === "suspended") void ctx.resume();
+    if (!loadingRef.current) {
+      // Fetch and decode both recordings once; they are small local files.
+      loadingRef.current = Promise.all(
+        (Object.keys(SOUND_FILES) as SoundName[]).map(async (name) => {
+          try {
+            const res = await fetch(SOUND_FILES[name]);
+            buffersRef.current[name] = await ctx.decodeAudioData(await res.arrayBuffer());
+          } catch {
+            /* missing or undecodable file: the game simply stays silent */
+          }
+        }),
+      ).then(() => undefined);
+    }
+    return ctx;
   }, []);
 
-  /** Call from the sound toggle's click handler to unlock audio. */
+  /** Unlocks audio from a user gesture (e.g. turning sound back on). */
   const unlock = useCallback(() => {
     ensureContext();
   }, [ensureContext]);
+
+  // Sound is on by default: unlock on the first interaction anywhere.
+  // A finger touching down is NOT a user activation in browsers; only lifting
+  // it (pointerup / touchend), a click or a key press is. So listen to all of
+  // them and keep trying until the audio context is actually running.
+  useEffect(() => {
+    if (!enabled) return;
+    const events = ["pointerdown", "pointerup", "touchend", "click", "keydown"] as const;
+    const onGesture = () => {
+      const ctx = ensureContext();
+      if (ctx?.state === "running") detach();
+    };
+    const detach = () => events.forEach((e) => window.removeEventListener(e, onGesture, true));
+    events.forEach((e) => window.addEventListener(e, onGesture, true));
+    return detach;
+  }, [enabled, ensureContext]);
 
   const stopAll = useCallback(() => {
     for (const node of activeRef.current) {
@@ -47,7 +79,7 @@ export function useGameAudio(enabled: boolean) {
         /* already stopped */
       }
     }
-    activeRef.current = [];
+    activeRef.current.clear();
   }, []);
 
   useEffect(() => {
@@ -63,84 +95,48 @@ export function useGameAudio(enabled: boolean) {
     [stopAll],
   );
 
-  const noiseBuffer = useCallback((ctx: AudioContext, seconds: number) => {
-    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * seconds), ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-    return buffer;
-  }, []);
-
-  /** Low rumble that builds over the roll duration. */
+  /** Schedules the roll's sounds on the audio clock, in sync with the animation. */
   const playRoll = useCallback(
-    (durationMs: number) => {
+    async (plan: { pinsDown: number; totalPins: number; instant?: boolean }) => {
       if (!enabled) return;
       const ctx = ensureContext();
       const master = masterRef.current;
       if (!ctx || !master) return;
-      const seconds = durationMs / 1000;
-      const t0 = ctx.currentTime;
+      const requestedAt = ctx.currentTime;
+      await loadingRef.current;
+      // If decoding took a moment, keep the timeline anchored to when the roll began.
+      const t0 = requestedAt + 0.03;
+      for (const cue of buildSoundCues(plan.pinsDown, plan.totalPins, plan.instant)) {
+        const buffer = buffersRef.current[cue.sound];
+        if (!buffer) continue;
+        const onset = SOUND_ONSETS[cue.sound];
+        // Start the file so its onset is heard at t0 + cue.at; if that moment
+        // has passed (or is too close), skip into the file instead.
+        const startAt = t0 + cue.at - onset;
+        const now = ctx.currentTime + 0.01;
+        const when = Math.max(now, startAt);
+        const offset = Math.max(0, when - startAt);
+        if (offset >= buffer.duration) continue;
 
-      const src = ctx.createBufferSource();
-      src.buffer = noiseBuffer(ctx, seconds + 0.2);
-      const lp = ctx.createBiquadFilter();
-      lp.type = "lowpass";
-      lp.frequency.setValueAtTime(180, t0);
-      lp.frequency.linearRampToValueAtTime(320, t0 + seconds);
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.5, t0 + 0.25);
-      gain.gain.linearRampToValueAtTime(0.75, t0 + seconds * 0.9);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + seconds + 0.15);
-      src.connect(lp).connect(gain).connect(master);
-      src.start(t0);
-      src.stop(t0 + seconds + 0.2);
-      activeRef.current.push(src);
-    },
-    [enabled, ensureContext, noiseBuffer],
-  );
-
-  /** Restrained clatter: one short knock per falling pin. */
-  const playPins = useCallback(
-    (count: number) => {
-      if (!enabled || count <= 0) return;
-      const ctx = ensureContext();
-      const master = masterRef.current;
-      if (!ctx || !master) return;
-      const t0 = ctx.currentTime;
-      const knocks = Math.min(count * 2, 14);
-      for (let i = 0; i < knocks; i++) {
-        const t = t0 + i * 0.045 + Math.random() * 0.03;
-        const osc = ctx.createOscillator();
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(900 + Math.random() * 700, t);
-        osc.frequency.exponentialRampToValueAtTime(260, t + 0.08);
-        const g = ctx.createGain();
-        const peak = 0.22 * (1 - i / (knocks + 4));
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(peak, t + 0.004);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
-        osc.connect(g).connect(master);
-        osc.start(t);
-        osc.stop(t + 0.14);
-        activeRef.current.push(osc);
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(cue.gain, when);
+        src.connect(gain).connect(master);
+        src.start(when, offset);
+        if (cue.fadeFrom !== undefined && cue.fadeTo !== undefined) {
+          const from = Math.max(when, t0 + cue.fadeFrom);
+          const to = Math.max(from + 0.01, t0 + cue.fadeTo);
+          gain.gain.setValueAtTime(cue.gain, from);
+          gain.gain.linearRampToValueAtTime(0.0001, to);
+          src.stop(to + 0.02);
+        }
+        activeRef.current.add(src);
+        src.onended = () => activeRef.current.delete(src);
       }
-      const src = ctx.createBufferSource();
-      src.buffer = noiseBuffer(ctx, 0.5);
-      const bp = ctx.createBiquadFilter();
-      bp.type = "bandpass";
-      bp.frequency.value = 2400;
-      bp.Q.value = 0.8;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.45);
-      src.connect(bp).connect(g).connect(master);
-      src.start(t0);
-      src.stop(t0 + 0.5);
-      activeRef.current.push(src);
     },
-    [enabled, ensureContext, noiseBuffer],
+    [enabled, ensureContext],
   );
 
-  return { unlock, playRoll, playPins, stopAll };
+  return { unlock, playRoll, stopAll };
 }

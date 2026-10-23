@@ -10,7 +10,6 @@ import { allDrugsRolled } from "@/lib/promptLogic";
 import type { Pin } from "@/types/game";
 import { Dialog } from "@/components/ui/Dialog";
 import { AccessiblePinList } from "./AccessiblePinList";
-import { BallSelector } from "./BallSelector";
 import { CoverageBoard } from "./CoverageBoard";
 import { GameFooter } from "./GameFooter";
 import { GameHeader } from "./GameHeader";
@@ -107,7 +106,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
               />
             ) : (
               <div className="grid gap-5 kiosk:min-h-0 kiosk:flex-1 kiosk:grid-cols-[minmax(0,1fr)_minmax(24rem,31%)] kiosk:gap-[2rem]">
-                <div className="flex min-w-0 flex-col gap-5 lg:gap-6 kiosk:min-h-0">
+                <div className="flex min-w-0 flex-col kiosk:min-h-0">
                   <GameStage
                     phase={state.phase}
                     selectedDrug={state.selectedDrug}
@@ -116,21 +115,16 @@ export function GameShell({ force2D = false }: GameShellProps) {
                     interactive={state.phase === "selecting" || state.phase === "result"}
                     pinName={pinName}
                     onPinSelect={onPinSelect}
+                    onRoll={game.roll}
                     force2D={force2D}
                     className="aspect-[4/3] w-full sm:aspect-[16/9] kiosk:aspect-auto kiosk:min-h-0 kiosk:flex-1"
                     wrapperClassName="kiosk:min-h-0 kiosk:flex-1"
                   />
                   <AccessiblePinList phase={state.phase} drug={state.result?.drug ?? null} />
-                  <BallSelector
-                    phase={state.phase}
-                    selectedDrug={state.selectedDrug}
-                    rolledDrugs={state.rolledDrugs}
-                    onSelect={game.selectDrug}
-                  />
                 </div>
                 <GameSidePanel
                   state={state}
-                  onRoll={game.roll}
+                  onSelectDrug={game.selectDrug}
                   onChooseAnother={game.chooseAnother}
                   onOpenCoverage={game.openCoverage}
                   onOpenPin={game.openPin}

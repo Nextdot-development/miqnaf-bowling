@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { gameReducer, initialGameState } from "@/lib/gameReducer";
-import { pinsDownCount } from "@/lib/gameLogic";
-import { BALL_TRAVEL_MS, ROLL_TOTAL_MS } from "@/lib/timing";
+import { pinsDownCount, TOTAL_PINS } from "@/lib/gameLogic";
+import { ROLL_TOTAL_MS } from "@/lib/timing";
 import { useGameAudio } from "@/hooks/useGameAudio";
 import type { CoverageMode, DrugId, PinNumber } from "@/types/game";
 
@@ -23,14 +23,16 @@ export function useGameState(reducedMotion: boolean) {
     return () => window.clearTimeout(done);
   }, [phase, rollId, rollInstant]);
 
-  // Sounds follow the same fixed timeline for every drug.
-  const { playRoll, playPins } = audio;
+  // Each roll schedules its whole soundtrack once, on the same fixed
+  // timeline as the animation. Which pins clatter comes from the outcome matrix.
+  const { playRoll } = audio;
+  const soundedRoll = useRef(0);
   useEffect(() => {
-    if (phase !== "rolling" || rollInstant || !selectedDrug) return;
-    playRoll(BALL_TRAVEL_MS);
-    const impact = window.setTimeout(() => playPins(pinsDownCount(selectedDrug)), BALL_TRAVEL_MS - 40);
-    return () => window.clearTimeout(impact);
-  }, [phase, rollId, rollInstant, selectedDrug, playRoll, playPins]);
+    if (rollId === 0 || soundedRoll.current === rollId || !selectedDrug) return;
+    if (phase !== "rolling" && !(phase === "result" && rollInstant)) return;
+    soundedRoll.current = rollId;
+    void playRoll({ pinsDown: pinsDownCount(selectedDrug), totalPins: TOTAL_PINS, instant: rollInstant });
+  }, [phase, rollId, rollInstant, selectedDrug, playRoll]);
 
   const actions = useMemo(
     () => ({

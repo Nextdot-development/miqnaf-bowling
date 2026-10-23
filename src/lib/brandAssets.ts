@@ -10,4 +10,12 @@ export const BRAND_ASSETS = {
     width: 781,
     height: 209,
   },
+  /**
+   * Favicon: the arrow mark from the MIQNAF logo (public/favicon.ico and
+   * public/apple-touch-icon.png). Browsers cache favicons by URL and ignore
+   * normal refreshes, so bump `version` whenever the icon file changes.
+   */
+  favicon: {
+    version: 2,
+  },
 } as const;

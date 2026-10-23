@@ -40,8 +40,23 @@ async function newPage(width, height) {
     if (m.type() === "error" || m.type() === "warning") errors.push(`[${m.type()}] ${m.text()}`);
   });
   page.on("pageerror", (e) => errors.push(`[pageerror] ${e.message}`));
+  page.on("response", (r) => {
+    if (/\.(mp3|ico)(\?|$)/.test(r.url())) assetLog.push(`${r.status()} ${new URL(r.url()).pathname}`);
+  });
   return page;
 }
+/** Swipes the ball up the lane with the mouse (pointer events, like a finger). */
+const swipeRoll = async (page, { midShot } = {}) => {
+  const box = await (await page.waitForSelector('[aria-label^="Roll the ball"]:not([disabled])', { timeout: 8000 })).boundingBox();
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 12; i++) await page.mouse.move(x, y - i * 20);
+  if (midShot) await shot(page, midShot);
+  await page.mouse.up();
+};
+const assetLog = [];
 const shot = (page, name) => page.screenshot({ path: path.join(outDir, `${name}.png`) });
 const clickButton = async (page, text) => {
   const handle = await page.waitForFunction(
@@ -67,7 +82,7 @@ await shot(page, "02-select-empty");
 await clickButton(page, "Nafithromycin,");
 await sleep(500);
 await shot(page, "03-selected-naf");
-await clickButton(page, "Roll");
+await swipeRoll(page, { midShot: "03b-swiping" });
 await sleep(1200);
 await shot(page, "04-rolling");
 if (process.env.QUICK) {
@@ -80,9 +95,11 @@ await sleep(2100);
 await shot(page, "04b-impact");
 await sleep(1500);
 await shot(page, "05-result-naf");
+await clickButton(page, "Choose another ball");
+await sleep(400);
 await clickButton(page, "Azithromycin,");
 await sleep(400);
-await clickButton(page, "Roll");
+await swipeRoll(page);
 await sleep(2300);
 await shot(page, "06-azi-impact");
 await sleep(2000);
@@ -92,9 +109,11 @@ await sleep(600);
 await shot(page, "08-pin-dialog");
 await page.keyboard.press("Escape");
 await sleep(400);
+await clickButton(page, "Choose another ball");
+await sleep(400);
 await clickButton(page, "Clarithromycin,");
 await sleep(300);
-await clickButton(page, "Roll");
+await swipeRoll(page);
 await sleep(4000);
 await shot(page, "09-result-clari-all-three");
 await clickButton(page, "Open the coverage board");
@@ -115,7 +134,8 @@ for (const [w, h, name] of [
   await clickButton(p, "Start game");
   await sleep(1500);
   await clickButton(p, "Azithromycin,");
-  await clickButton(p, "Roll");
+  await sleep(300);
+  await swipeRoll(p);
   await sleep(4000);
   await p.screenshot({ path: path.join(outDir, `${name}-result.png`), fullPage: true });
   const overflow = await p.evaluate(() => ({
@@ -126,4 +146,5 @@ for (const [w, h, name] of [
 }
 
 await browser.close();
+console.log("Assets loaded:", [...new Set(assetLog)].join(", ") || "none");
 console.log(errors.length ? `Console issues:\n${errors.join("\n")}` : "No console errors or warnings");

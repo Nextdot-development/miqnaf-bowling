@@ -1,4 +1,4 @@
-const STEPS = ["Pick a ball", "Roll", "Watch", "Read result"] as const;
+const STEPS = ["Pick a ball", "Swipe", "Watch", "Read result"] as const;
 
 /** Four-step progress; `current` is 1-based. */
 export function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 }) {

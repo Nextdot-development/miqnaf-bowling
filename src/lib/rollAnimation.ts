@@ -64,7 +64,8 @@ export interface PinPose {
   dim: number;
 }
 
-const FALL_S = 0.45;
+/** Seconds for a falling pin to tip from upright to lying on the deck. */
+export const FALL_S = 0.45;
 const SLIDE_S = 0.75;
 const SLIDE_DIST = 0.45;
 const FADE_START_S = 0.62;
@@ -110,6 +111,27 @@ export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number): PinPos
     opacity: 1 - clamp01((u - FADE_START_S) / FADE_S),
     dim: 0,
   };
+}
+
+/**
+ * Swipe-to-roll "aim": while the player drags the ball it creeps forward
+ * (up to AIM_REACH), and once the roll starts that offset fades out over
+ * AIM_BLEND_MS. The swipe never changes the path, speed or outcome; every
+ * roll converges on the same fixed timeline within a fifth of a second.
+ */
+export const AIM_REACH = 0.35;
+export const AIM_BLEND_MS = 220;
+
+export function aimOffset(phase: "intro" | "selecting" | "rolling" | "result", elapsedMs: number, aim: number): number {
+  const a = Math.min(1, Math.max(0, aim));
+  if (phase === "selecting") return a * AIM_REACH;
+  if (phase === "rolling") return a * AIM_REACH * Math.max(0, 1 - elapsedMs / AIM_BLEND_MS);
+  return 0;
+}
+
+/** Seconds from roll start until the ball reaches a given z (for sound sync). */
+export function ballArrivalSeconds(z: number): number {
+  return arrivalSeconds(z);
 }
 
 /** Final pose used for the result state and reduced-motion rolls. */
