@@ -19,7 +19,7 @@ export function StandingPinsList({ standing, onOpenPin }: StandingPinsListProps)
       </div>
       {standing.length === 0 ? (
         <p className="mt-2 rounded-xl bg-surface-sunken/70 px-4 py-3 text-lg font-semibold text-brand-navy">
-          None. All eight pins fell on this roll.
+          All eight pins fell on this roll.
         </p>
       ) : (
         <ul className="mt-2 space-y-2" role="list">

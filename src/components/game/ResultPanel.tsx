@@ -18,7 +18,10 @@ export function ResultPanel({ result, rolledCount, onOpenPin }: ResultPanelProps
         <p className="eyebrow">{DRUGS[result.drug].name}</p>
         <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
           <p className="flex items-baseline gap-3 text-brand-navy">
-            <span className="font-display text-7xl font-black leading-none sm:text-8xl">{result.pinsDown}</span>
+            {/* Brand gold on a navy tile: gold alone is too faint on white. */}
+            <span className="inline-flex min-w-[1.35em] items-center justify-center self-center rounded-2xl bg-brand-navy px-3 py-1 font-display text-6xl font-black leading-none text-brand-gold sm:text-7xl">
+              {result.pinsDown}
+            </span>
             <span className="text-2xl font-semibold sm:text-3xl">of {result.totalPins} pins down</span>
           </p>
           <span className="rounded-full bg-surface-sunken px-3 py-1.5 text-sm font-bold text-brand-navy">

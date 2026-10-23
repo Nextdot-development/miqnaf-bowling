@@ -146,7 +146,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
       <Dialog
         open={confirmReset}
         onClose={() => setConfirmReset(false)}
-        title="Start a new session?"
+        title="Start a new game?"
         footer={
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button type="button" className="btn-outline justify-center px-6 py-3" onClick={() => setConfirmReset(false)}>
@@ -160,7 +160,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
                 game.newSession();
               }}
             >
-              Start new session
+              Start new game
             </button>
           </div>
         }

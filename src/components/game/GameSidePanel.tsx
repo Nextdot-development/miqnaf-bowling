@@ -50,7 +50,7 @@ export function GameSidePanel({
           {phase === "selecting" && (
             <motion.div key="select" {...fade} className="space-y-5">
               <h2 className="text-3xl font-black leading-tight text-brand-navy kiosk:text-[2.1rem]">
-                Tap a ball, then swipe it up the lane.
+                Select a ball, then swipe it up the lane.
               </h2>
               <BallSelector
                 phase={phase}
@@ -58,9 +58,6 @@ export function GameSidePanel({
                 rolledDrugs={state.rolledDrugs}
                 onSelect={onSelectDrug}
               />
-              <p className="text-lg leading-relaxed text-ink-muted">
-                The ball&apos;s path and speed are identical for all three. Only the pins that react differ.
-              </p>
             </motion.div>
           )}
 

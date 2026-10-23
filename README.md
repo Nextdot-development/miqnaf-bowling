@@ -25,7 +25,7 @@ npm start            # serve the production build at http://localhost:3000
 
 For a conference kiosk, run `npm run build && npm start` and open the page full-screen (F11) in Chrome or Edge, or use kiosk mode: `chrome --kiosk http://localhost:3000`.
 
-**Touch screen (42", 37.5" × 21.1", 16:9).** Any landscape screen 1280px wide or more gets a fixed full-screen layout with no page scrolling, and the whole interface scales with the screen: 16px root text at 1920×1080, 32px at 3840×2160. A 1080p or a 4K panel therefore looks the same, just sharper. Touch handling: no double-tap zoom, no tap highlight, no long-press menu, no text selection, enlarged pin hit areas, and hover effects only on devices that can hover. Smaller or portrait screens get a scrolling, stacked layout.
+**Touch screen (42", 37.5" × 21.1", 16:9).** Any landscape screen 900px wide or more (CSS pixels) gets a fixed full-screen layout with no page scrolling, and the whole interface scales with the screen height and width: 16px root text at 1920×1080, 32px at 3840×2160. A 1080p or 4K panel, at any Windows display scaling from 100% to 200%, full screen or in a browser window, shows the same one-screen layout. `node scripts/fit-check.mjs <url>` checks every screen at 14 such sizes and reports anything that would scroll. Touch handling: no double-tap zoom, no tap highlight, no long-press menu, no text selection, enlarged pin hit areas, and hover effects only on devices that can hover. Smaller or portrait screens get a scrolling, stacked layout.
 
 Optional visual check (needs Chrome or Edge installed and the app running):
 
@@ -37,7 +37,7 @@ This plays the full flow in a headless browser, saves screenshots of each state 
 
 ## How it works
 
-**Game flow:** intro → pick a ball → swipe the ball up the lane → watch (about 2 s of ball travel, then the pins settle) → result → pathogen cards / coverage board → pick another ball. "Start new session" (the ↺ button in the header) is the only action that clears session history.
+**Game flow:** intro → pick a ball → swipe the ball up the lane → watch (about 2 s of ball travel, then the pins settle) → result → pathogen cards / coverage board → pick another ball. "New game" (the gold button in the header) is the only action that clears session history; it asks for confirmation first.
 
 **Swipe to roll:** there is no ROLL button. The player swipes the ball up the lane with a finger (or drags with a mouse); the ball follows the finger and is released into the roll (`src/components/game/SwipeToRoll.tsx`). A tap, a short drag, or a sideways or downward swipe does not roll. The gesture only starts the roll: its strength never changes the ball's path, speed or the outcome. The small forward nudge while dragging fades out within 0.22 s of release (`aimOffset` in `rollAnimation.ts`). Keyboard users can focus the ball and press Enter or Space.
 

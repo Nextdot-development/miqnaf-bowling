@@ -14,8 +14,12 @@ const config: Config = {
   theme: {
     extend: {
       screens: {
-        /** Landscape ≥1280px: fixed full-screen kiosk layout (no page scroll). */
-        kiosk: { raw: "(min-width: 1280px) and (min-aspect-ratio: 4/3)" },
+        /**
+         * Landscape screens ≥900px wide: fixed full-screen layout (no page
+         * scroll). The floor is low so the 42" panel gets this layout even at
+         * 175–200% Windows scaling (1080p at 200% is a 960×540 viewport).
+         */
+        kiosk: { raw: "(min-width: 900px) and (min-aspect-ratio: 4/3)" },
       },
       colors: {
         brand: {

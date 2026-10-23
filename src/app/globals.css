@@ -20,14 +20,16 @@
     overscroll-behavior: none;
   }
   /*
-   * Landscape screens of 1280px and up use the fixed full-screen layout. The
+   * Landscape screens 900px wide and up use the fixed full-screen layout. The
    * root size scales with the viewport so the same layout fills a 1080p or a
    * 4K panel (the 42" 16:9 touch screen) without scrolling: 16px at
-   * 1920×1080, 32px at 3840×2160. All sizing is in rem.
+   * 1920×1080, 32px at 3840×2160. All sizing is in rem. The floor is low on
+   * purpose: with Windows display scaling or browser bars the viewport gets
+   * shorter, and the layout must keep shrinking with it to stay on one screen.
    */
-  @media (min-width: 1280px) and (min-aspect-ratio: 4/3) {
+  @media (min-width: 900px) and (min-aspect-ratio: 4/3) {
     html {
-      font-size: clamp(12px, min(0.8333vw, 1.4815vh), 36px);
+      font-size: clamp(6px, min(0.8333vw, 1.4815vh), 36px);
     }
   }
   body {

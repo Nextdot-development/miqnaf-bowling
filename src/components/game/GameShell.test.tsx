@@ -72,7 +72,7 @@ describe("GameShell", () => {
     startGame();
     const ballControl = screen.getByRole("button", { name: /^Roll the ball/ });
     expect(ballControl).toBeDisabled();
-    expect(screen.getByText("Pick a ball below")).toBeInTheDocument();
+    expect(screen.getByText("Pick a ball")).toBeInTheDocument();
 
     click(button(/^Azithromycin/));
     expect(ballControl).toBeEnabled();
@@ -120,7 +120,7 @@ describe("GameShell", () => {
     click(button(/^Nafithromycin/));
     click(button(/^Roll the ball/));
     expect(screen.getByRole("status")).toHaveTextContent("Nafithromycin: 8 of 8 pins down. No pins are standing.");
-    expect(await screen.findByText("None. All eight pins fell on this roll.")).toBeInTheDocument();
+    expect(await screen.findByText("All eight pins fell on this roll.")).toBeInTheDocument();
   });
 
   it("is operable from the keyboard", async () => {

@@ -185,7 +185,7 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
           className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/80 px-6 py-2.5 text-base font-bold text-white shadow-lift sm:bottom-6 sm:text-lg"
           aria-hidden
         >
-          {showPick ? "Pick a ball below" : dragging ? (armed ? "Let go to roll" : "Keep swiping up") : "Swipe the ball up to roll"}
+          {showPick ? "Pick a ball" : dragging ? (armed ? "Let go to roll" : "Keep swiping up") : "Swipe the ball up to roll"}
         </p>
       )}
     </div>
