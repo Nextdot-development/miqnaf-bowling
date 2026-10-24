@@ -2,12 +2,10 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import type { CSSProperties } from "react";
-import { DRUG_ORDER, DRUGS, INTRO_TAGLINE, INTRO_TAGLINE_EMPHASIS } from "@/data/gameData";
-import { BALL_COLORS } from "@/lib/drugVisuals";
+import { INTRO_TAGLINE, INTRO_TAGLINE_EMPHASIS } from "@/data/gameData";
 import type { Pin } from "@/types/game";
 import { GameStage } from "./GameStage";
-import { ProductLogo } from "./ProductLogo";
+import { BrandLogo } from "./BrandLogo";
 
 interface IntroScreenProps {
   onStart: () => void;
@@ -16,7 +14,11 @@ interface IntroScreenProps {
 
 const noop = () => {};
 
-const HOW_TO_PLAY = ["Pick a ball", "Swipe it up the lane", "Watch the pins"] as const;
+const HOW_TO_PLAY = [
+  { label: "Pick a ball", hint: "Choose one of the three" },
+  { label: "Swipe it up", hint: "Send it down the lane" },
+  { label: "Watch the pins", hint: "See which ones fall" },
+] as const;
 
 export function IntroScreen({ onStart, pinName }: IntroScreenProps) {
   const reduce = useReducedMotion();
@@ -32,14 +34,14 @@ export function IntroScreen({ onStart, pinName }: IntroScreenProps) {
         {/* Left: brand, title, call to action, how to play */}
         <section className="flex flex-col gap-10 px-6 py-8 sm:px-10 kiosk:w-[44%] kiosk:shrink-0 kiosk:justify-between kiosk:gap-[2rem] kiosk:px-[5.5rem] kiosk:py-[4rem]">
           <motion.div {...rise(0)}>
-            <ProductLogo priority className="h-14 sm:h-16 kiosk:h-[5rem]" />
+            <BrandLogo priority className="h-14 sm:h-16 kiosk:h-[5rem]" />
           </motion.div>
 
           <div>
             <motion.h1 {...rise(0.06)} className="font-black leading-[0.98] tracking-tight text-brand-navy">
-              <span className="block text-[2.6rem] sm:text-6xl kiosk:text-[5.2rem]">Nafithromycin</span>
-              <span className="mt-2 block text-[1.9rem] uppercase sm:text-5xl kiosk:whitespace-nowrap kiosk:text-[3.7rem]">
-                CABP Bowling <span className="text-brand-red">Game</span>
+              <span className="block whitespace-nowrap text-[2.4rem] uppercase sm:text-6xl kiosk:text-[4.8rem]">
+                CABP Bowling
+                <span className="block text-brand-red">Game</span>
               </span>
             </motion.h1>
 
@@ -70,29 +72,43 @@ export function IntroScreen({ onStart, pinName }: IntroScreenProps) {
               <button
                 type="button"
                 onClick={onStart}
-                className="btn-primary w-full px-10 py-5 text-2xl tracking-[0.06em] sm:w-auto sm:text-3xl kiosk:px-[3.5rem] kiosk:py-[1.6rem] kiosk:text-[2.2rem]"
+                className="btn-primary btn-blink w-full px-12 py-7 text-3xl tracking-[0.06em] sm:w-auto sm:text-4xl kiosk:px-[4.75rem] kiosk:py-[2.3rem] kiosk:text-[3rem]"
               >
-                Start game <ArrowRight className="h-8 w-8" strokeWidth={3} aria-hidden />
+                Start game <ArrowRight className="h-10 w-10 kiosk:h-[3rem] kiosk:w-[3rem]" strokeWidth={3} aria-hidden />
               </button>
             </motion.div>
           </div>
 
-          <motion.div {...rise(0.24)}>
-            <h2 className="eyebrow font-body">How to play</h2>
-            <ol className="mt-3 grid gap-3 sm:grid-cols-3">
-              {HOW_TO_PLAY.map((step, i) => (
-                <li key={step} className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-card">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-navy font-display text-lg font-black text-white">
+          {/* How to play: three numbered steps joined by a line. Kept quiet (no fill,
+              no gold) so the Start game button stays the strongest thing on the screen. */}
+          <motion.section {...rise(0.24)} aria-labelledby="how-to-play">
+            <h2 id="how-to-play" className="eyebrow font-body kiosk:text-base">
+              How to play
+            </h2>
+            <ol className="relative mt-4 grid gap-5 sm:grid-cols-3 sm:gap-4 kiosk:mt-[1.4rem]">
+              {HOW_TO_PLAY.map(({ label, hint }, i) => (
+                <li key={label} className="relative flex items-start gap-4 sm:flex-col sm:gap-3">
+                  {/* Connector to the next step (desktop rows only). */}
+                  {i < HOW_TO_PLAY.length - 1 && (
+                    <span
+                      className="absolute left-[3.25rem] right-[-1rem] top-[1.375rem] hidden h-px bg-line sm:block kiosk:left-[3.75rem] kiosk:top-[1.625rem]"
+                      aria-hidden
+                    />
+                  )}
+                  <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-brand-navy/70 bg-surface-page font-display text-xl font-black text-brand-navy kiosk:h-[3.25rem] kiosk:w-[3.25rem] kiosk:text-[1.6rem]">
                     {i + 1}
                   </span>
-                  <span className="font-bold leading-tight text-brand-navy">{step}</span>
+                  <span className="min-w-0">
+                    <span className="block whitespace-nowrap text-lg font-bold leading-tight text-brand-navy kiosk:text-[1.35rem]">{label}</span>
+                    <span className="mt-1 block text-sm leading-snug text-ink-muted kiosk:text-[1rem]">{hint}</span>
+                  </span>
                 </li>
               ))}
             </ol>
-          </motion.div>
+          </motion.section>
         </section>
 
-        {/* Right: the lane, edge to edge, with the three balls in the sky above the pins */}
+        {/* Right: the lane, edge to edge, with the three named balls lined up at the start */}
         <motion.div
           {...(reduce ? {} : { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.5, delay: 0.1 } })}
           className="relative aspect-[4/3] w-full sm:aspect-[16/10] kiosk:aspect-auto kiosk:min-h-0 kiosk:flex-1"
@@ -111,26 +127,6 @@ export function IntroScreen({ onStart, pinName }: IntroScreenProps) {
             className="h-full w-full"
           />
 
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col items-center px-4 pt-6 sm:pt-10 kiosk:pt-[3.5rem]">
-            <p className="text-center text-sm font-bold uppercase tracking-[0.2em] text-white/75 sm:text-base">
-              Three balls · One lane · Eight pathogen pins
-            </p>
-            <ul className="mt-4 flex flex-wrap justify-center gap-3 sm:gap-4" aria-label="The three balls">
-              {DRUG_ORDER.map((id) => (
-                <li
-                  key={id}
-                  className="flex items-center gap-3 rounded-2xl bg-white/10 px-3 py-2 ring-1 ring-white/15 backdrop-blur-sm sm:px-4 sm:py-2.5"
-                  style={{ "--ball": BALL_COLORS[id] } as CSSProperties}
-                >
-                  <span className="ball-swatch h-8 w-8 sm:h-10 sm:w-10" aria-hidden />
-                  <span className="leading-tight">
-                    <span className="block font-display text-base font-medium text-white sm:text-xl">{DRUGS[id].name}</span>
-                    <span className="hidden text-sm text-white/70 sm:block">{DRUGS[id].drugClass}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
           <p className="sr-only">Preview of the bowling lane with eight pathogen pins.</p>
         </motion.div>
       </div>

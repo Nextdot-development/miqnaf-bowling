@@ -4,8 +4,9 @@ import { Environment, Lightformer } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
-import { CAMERA, FRONT_ROW_Z, verticalFovFor } from "@/lib/laneLayout";
-import { ballColor } from "@/lib/drugVisuals";
+import { DRUG_ORDER } from "@/data/gameData";
+import { CAMERA, FRONT_ROW_Z, introBallX, verticalFovFor } from "@/lib/laneLayout";
+import { BALL_COLORS } from "@/lib/drugVisuals";
 import type { DrugId, GamePhase, Pin } from "@/types/game";
 import { BowlingBall } from "./BowlingBall";
 import { BowlingLane } from "./BowlingLane";
@@ -161,7 +162,10 @@ export default function BowlingScene(props: BowlingSceneProps) {
           interactive={interactive}
           onPinSelect={onPinSelect}
         />
-        <BowlingBall color={ballColor(ballDrug)} />
+        {/* Intro: the three balls line up. In play, only the picked ball is on the lane. */}
+        {phase === "intro"
+          ? DRUG_ORDER.map((id, i) => <BowlingBall key={id} color={BALL_COLORS[id]} offsetX={introBallX(i)} still />)
+          : ballDrug && <BowlingBall color={BALL_COLORS[ballDrug]} />}
       </Canvas>
     </SceneTimelineContext.Provider>
   );

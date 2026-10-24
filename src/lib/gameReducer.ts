@@ -1,17 +1,7 @@
-/**
- * Predictable state machine for the game. Pure: no timers, audio or DOM.
- *
- *   intro ─START─▶ selecting ─ROLL─▶ rolling ─ROLL_COMPLETE─▶ result
- *                      ▲                                         │
- *                      └──────────────SELECT_DRUG────────────────┘
- *
- * Coverage board and pathogen detail are overlays that never change the
- * phase. NEW_SESSION is the only action that clears session history.
- */
 import { DRUG_ORDER } from "@/data/gameData";
 import { pinsDownCount, standingPins, TOTAL_PINS } from "@/lib/gameLogic";
-import { selectCoveragePrompt, selectRollPrompt } from "@/lib/promptLogic";
-import type { CoverageMode, DrugId, GameState, PinNumber } from "@/types/game";
+import { selectRollPrompt } from "@/lib/promptLogic";
+import type { DrugId, GameState, PinNumber } from "@/types/game";
 
 export type GameAction =
   | { type: "START_SESSION" }
@@ -20,9 +10,6 @@ export type GameAction =
   | { type: "CHOOSE_ANOTHER" }
   | { type: "ROLL"; at: number; instant: boolean }
   | { type: "ROLL_COMPLETE"; rollId: number }
-  | { type: "OPEN_COVERAGE" }
-  | { type: "CLOSE_COVERAGE" }
-  | { type: "SET_COVERAGE_MODE"; mode: CoverageMode }
   | { type: "OPEN_PIN"; pin: PinNumber }
   | { type: "CLOSE_PIN" }
   | { type: "SET_SOUND"; on: boolean };
@@ -39,10 +26,6 @@ export const initialGameState: GameState = {
   usedPrompts: [],
   // On by default (client request); audio starts on the first tap.
   soundOn: true,
-  coverageOpen: false,
-  coverageVisited: false,
-  coverageMode: "session",
-  coveragePromptId: null,
   openPin: null,
 };
 
@@ -74,8 +57,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, phase: "selecting", sessionStarted: true };
 
     case "NEW_SESSION":
-      // Fresh start for the next participant, with sound back on.
-      return { ...initialGameState, phase: "intro" };
+      // Fresh start for the next participant, with sound back on. The roll
+      // counter keeps counting: each roll's sound is keyed on its id, so
+      // restarting it at 0 would make the next player's first roll silent.
+      return { ...initialGameState, phase: "intro", rollId: state.rollId };
 
     case "SELECT_DRUG":
       if (state.phase === "intro" || state.phase === "rolling") return state;
@@ -103,7 +88,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         rollId: state.rollId + 1,
         rollStartedAt: action.at,
         rollInstant: action.instant,
-        coverageOpen: false,
         openPin: null,
       };
       return action.instant ? completeRoll(rolling) : rolling;
@@ -112,26 +96,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "ROLL_COMPLETE":
       if (state.phase !== "rolling" || action.rollId !== state.rollId) return state;
       return completeRoll(state);
-
-    case "OPEN_COVERAGE": {
-      if (state.coverageOpen || state.phase === "intro" || state.phase === "rolling") return state;
-      const promptId = selectCoveragePrompt(state.usedPrompts);
-      return {
-        ...state,
-        coverageOpen: true,
-        coverageVisited: true,
-        coverageMode: "session",
-        coveragePromptId: promptId,
-        usedPrompts: promptId ? [...state.usedPrompts, promptId] : state.usedPrompts,
-        openPin: null,
-      };
-    }
-
-    case "CLOSE_COVERAGE":
-      return { ...state, coverageOpen: false, coveragePromptId: null };
-
-    case "SET_COVERAGE_MODE":
-      return state.coverageOpen ? { ...state, coverageMode: action.mode } : state;
 
     case "OPEN_PIN":
       if (state.phase === "intro" || state.phase === "rolling") return state;

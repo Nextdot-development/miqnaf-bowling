@@ -18,10 +18,6 @@ function detect(): boolean {
   return cached;
 }
 
-/**
- * "pending" during SSR / first paint, then true or false. Lets the shell show
- * the 2D lane until it knows whether the 3D scene can run.
- */
 export function useWebGLSupport(): boolean | "pending" {
   return useSyncExternalStore<boolean | "pending">(
     () => () => {},

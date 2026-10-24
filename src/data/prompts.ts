@@ -1,4 +1,3 @@
-/** Supplied discussion prompts (draft, pending scientific review). */
 import type { DiscussionPrompt, PromptId } from "@/types/game";
 
 export const PROMPTS: Readonly<Record<PromptId, DiscussionPrompt>> = {

@@ -1,7 +1,3 @@
-/**
- * Guards the supplied outcome matrix against accidental edits. Run by the
- * test suite and once at start-up in development.
- */
 import { PINS } from "@/data/gameData";
 import { pinsDownCount, standingPins } from "@/lib/gameLogic";
 import type { DrugId, PinNumber } from "@/types/game";

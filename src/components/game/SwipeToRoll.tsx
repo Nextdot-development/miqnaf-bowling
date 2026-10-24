@@ -27,12 +27,6 @@ const FLICK_SPEED = 0.55;
 /** The swipe zone covers the lane below this fraction of the stage height. */
 const ZONE_TOP = 0.42;
 
-/**
- * Touch / mouse gesture for rolling: put a finger on the lane and swipe up.
- * The ball follows the finger a little and is released into the roll. The
- * gesture only starts the roll; its strength never changes the path, speed or
- * outcome. Keyboard users can focus the ball and press Enter or Space.
- */
 export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingChange, onRoll }: SwipeToRollProps) {
   const reduce = useReducedMotion();
   const enabled = phase === "selecting" && hasBall;
@@ -180,12 +174,14 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
         )}
       </AnimatePresence>
 
+      {/* Pinned to the top of the lane; the ball name tags sit along the bottom. */}
       {(showHint || showPick || dragging) && (
         <p
-          className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/80 px-6 py-2.5 text-base font-bold text-white shadow-lift sm:bottom-6 sm:text-lg"
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/80 px-6 py-2.5 text-base font-bold text-white shadow-lift sm:text-lg kiosk:px-8 kiosk:py-3 kiosk:text-2xl"
+          style={{ top: -height * ZONE_TOP + 20 }}
           aria-hidden
         >
-          {showPick ? "Pick a ball" : dragging ? (armed ? "Let go to roll" : "Keep swiping up") : "Swipe the ball up to roll"}
+          {showPick ? "Choose a ball to roll" : dragging ? (armed ? "Let go to roll" : "Keep swiping up") : "Swipe the ball up to roll"}
         </p>
       )}
     </div>

@@ -1,7 +1,3 @@
-/**
- * Ball colours are interface identifiers only. They say nothing about
- * potency. Drawn from the brand palette.
- */
 import { BRAND } from "@/lib/brand";
 import type { DrugId } from "@/types/game";
 

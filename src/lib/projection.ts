@@ -1,7 +1,3 @@
-/**
- * Minimal perspective projection matching the 3D camera, used by the 2D
- * (no-WebGL) lane so both renderers frame the lane identically.
- */
 import { CAMERA, verticalFovFor } from "@/lib/laneLayout";
 
 type V3 = [number, number, number];

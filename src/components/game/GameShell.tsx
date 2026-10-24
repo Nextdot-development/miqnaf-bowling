@@ -6,17 +6,18 @@ import { useGameState } from "@/hooks/useGameState";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { joinPinNumbers, pinStatus, richToPlain } from "@/lib/gameLogic";
 import { validateOutcomeMatrix } from "@/lib/outcomeValidation";
-import { allDrugsRolled } from "@/lib/promptLogic";
+import { END_POPUP_DELAY_MS } from "@/lib/timing";
 import type { Pin } from "@/types/game";
 import { Dialog } from "@/components/ui/Dialog";
 import { AccessiblePinList } from "./AccessiblePinList";
-import { CoverageBoard } from "./CoverageBoard";
+import { BallRack } from "./BallRack";
+import { EndScreen } from "./EndScreen";
 import { GameFooter } from "./GameFooter";
 import { GameHeader } from "./GameHeader";
-import { GameSidePanel } from "./GameSidePanel";
 import { GameStage } from "./GameStage";
 import { IntroScreen } from "./IntroScreen";
 import { PathogenInfoDialog } from "./PathogenInfoDialog";
+import { PinKey } from "./PinKey";
 
 if (process.env.NODE_ENV !== "production") {
   const errors = validateOutcomeMatrix();
@@ -67,17 +68,28 @@ export function GameShell({ force2D = false }: GameShellProps) {
     return "";
   }, [state.phase, state.selectedDrug, state.result]);
 
-  const title = state.coverageOpen
-    ? "Pathogen coverage overview"
-    : state.phase === "rolling"
+  const title =
+    state.phase === "rolling"
       ? "Ball roll"
       : state.phase === "result" && state.result
-        ? allDrugsRolled(state.rolledDrugs) && !state.coverageVisited
-          ? "Try another ball?"
-          : `Result · ${DRUGS[state.result.drug].name}`
+        ? `Result · ${DRUGS[state.result.drug].name}`
         : "Choose your ball";
 
-  const toggleCoverage = () => (state.coverageOpen ? game.closeCoverage() : game.openCoverage());
+  
+  const [ending, setEnding] = useState<"won" | "lost" | null>(null);
+  const outcome = state.phase === "result" && state.result ? (state.result.standing.length > 0 ? "lost" : "won") : null;
+  const overlayOpen = state.openPin !== null;
+  useEffect(() => {
+    if (!outcome || overlayOpen) return;
+    const t = setTimeout(() => setEnding(outcome), END_POPUP_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [outcome, overlayOpen, state.result?.rollId]);
+  const shownEnding = state.phase === "result" ? ending : null;
+
+  const restart = useCallback(() => {
+    setEnding(null);
+    game.newSession();
+  }, [game]);
 
   return (
     <div className="flex min-h-[100dvh] flex-col kiosk:h-[100dvh] kiosk:overflow-hidden">
@@ -87,50 +99,42 @@ export function GameShell({ force2D = false }: GameShellProps) {
         <>
           <GameHeader
             title={title}
-            coverageOpen={state.coverageOpen}
-            coverageDisabled={state.phase === "rolling"}
             soundOn={state.soundOn}
-            onToggleCoverage={toggleCoverage}
             onSoundChange={game.setSound}
             onNewSession={() => setConfirmReset(true)}
           />
           <main className="mx-auto flex w-full flex-1 flex-col px-4 py-5 sm:px-8 lg:px-12 lg:py-7 kiosk:min-h-0 kiosk:px-[2.5rem] kiosk:py-[1.5rem]">
-            {state.coverageOpen ? (
-              <CoverageBoard
-                mode={state.coverageMode}
-                rolledDrugs={state.rolledDrugs}
-                promptId={state.coveragePromptId}
-                onModeChange={game.setCoverageMode}
-                onOpenPin={game.openPin}
-                onClose={game.closeCoverage}
+            {/* Full-width lane. On the kiosk the ball rack floats over its left
+                edge and the pin key over its right edge; on smaller screens they
+                sit above and below it. */}
+            <div className="relative flex flex-col gap-5 kiosk:min-h-0 kiosk:flex-1">
+              <GameStage
+                phase={state.phase}
+                selectedDrug={state.selectedDrug}
+                result={state.result}
+                rollStartedAt={state.rollStartedAt}
+                interactive={state.phase === "selecting" || state.phase === "result"}
+                pinName={pinName}
+                onPinSelect={onPinSelect}
+                onRoll={game.roll}
+                force2D={force2D}
+                className="aspect-[4/3] w-full sm:aspect-[16/9] kiosk:aspect-auto kiosk:min-h-0 kiosk:flex-1"
+                wrapperClassName="kiosk:min-h-0 kiosk:flex-1"
               />
-            ) : (
-              <div className="grid gap-5 kiosk:min-h-0 kiosk:flex-1 kiosk:grid-cols-[minmax(0,1fr)_minmax(24rem,31%)] kiosk:gap-[2rem]">
-                <div className="flex min-w-0 flex-col kiosk:min-h-0">
-                  <GameStage
-                    phase={state.phase}
-                    selectedDrug={state.selectedDrug}
-                    result={state.result}
-                    rollStartedAt={state.rollStartedAt}
-                    interactive={state.phase === "selecting" || state.phase === "result"}
-                    pinName={pinName}
-                    onPinSelect={onPinSelect}
-                    onRoll={game.roll}
-                    force2D={force2D}
-                    className="aspect-[4/3] w-full sm:aspect-[16/9] kiosk:aspect-auto kiosk:min-h-0 kiosk:flex-1"
-                    wrapperClassName="kiosk:min-h-0 kiosk:flex-1"
-                  />
-                  <AccessiblePinList phase={state.phase} drug={state.result?.drug ?? null} />
-                </div>
-                <GameSidePanel
-                  state={state}
-                  onSelectDrug={game.selectDrug}
-                  onChooseAnother={game.chooseAnother}
-                  onOpenCoverage={game.openCoverage}
-                  onOpenPin={game.openPin}
-                />
-              </div>
-            )}
+              <AccessiblePinList phase={state.phase} drug={state.result?.drug ?? null} />
+              <BallRack
+                phase={state.phase}
+                selectedDrug={state.selectedDrug}
+                rolledDrugs={state.rolledDrugs}
+                onSelect={game.selectDrug}
+                className="order-first rounded-3xl bg-brand-navy p-4 kiosk:absolute kiosk:left-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(22rem,24%)] kiosk:bg-transparent kiosk:p-0"
+              />
+              <PinKey
+                onOpenPin={game.openPin}
+                disabled={state.phase === "rolling"}
+                className="kiosk:absolute kiosk:right-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(24rem,25%)]"
+              />
+            </div>
           </main>
         </>
       )}
@@ -141,7 +145,9 @@ export function GameShell({ force2D = false }: GameShellProps) {
         {announcement}
       </p>
 
-      <PathogenInfoDialog pinNumber={state.openPin} rolledDrugs={state.rolledDrugs} onClose={game.closePin} />
+      <EndScreen outcome={shownEnding} standing={state.result?.standing} onRestart={restart} />
+
+      <PathogenInfoDialog pinNumber={state.openPin} onClose={game.closePin} />
 
       <Dialog
         open={confirmReset}

@@ -1,13 +1,3 @@
-/*
- * Brand fonts. Source files are in public/font/. The browser loads the
- * Latin-subset .woff2 files in public/font/web/, generated from them
- * (Helvetica Neue is unpacked from the .ttc collection, which browsers can't
- * load directly). If the source fonts change, regenerate the .woff2 files.
- *
- *   --font-display  Acumin Variable Concept: headings, numbers, buttons
- *   --font-body     Helvetica Neue: running text, labels
- */
-
 @font-face {
   font-family: "Acumin Variable Concept";
   src: url("/font/web/acumin-variable.woff2") format("woff2-variations"),

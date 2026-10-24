@@ -17,11 +17,8 @@ interface PathogenPinProps {
   pin: Pin;
   geometry: THREE.BufferGeometry;
   skin: THREE.Texture;
-  spotTexture: THREE.Texture;
   /** Whether the outcome matrix scripts this pin to fall on the current roll. */
   falls: boolean;
-  /** Show the dashed "pin was here" marker (result state, fallen pin). */
-  showSpot: boolean;
   interactive: boolean;
   onSelect: (pin: Pin) => void;
 }
@@ -30,9 +27,7 @@ export function PathogenPin({
   pin,
   geometry,
   skin,
-  spotTexture,
   falls,
-  showSpot,
   interactive,
   onSelect,
 }: PathogenPinProps) {
@@ -94,12 +89,6 @@ export function PathogenPin({
         />
       </group>
 
-      {showSpot && (
-        <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.2, 0.2]} />
-          <meshBasicMaterial map={spotTexture} transparent depthWrite={false} />
-        </mesh>
-      )}
     </group>
   );
 }

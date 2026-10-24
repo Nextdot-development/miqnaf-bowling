@@ -1,8 +1,3 @@
-/**
- * Everything outcome-related is derived from PINS[].outcome here. Components,
- * the 3D scene and the coverage board call these helpers rather than reading
- * or re-encoding the matrix themselves.
- */
 import { DRUGS, PINS } from "@/data/gameData";
 import type { DrugId, Pin, PinNumber, PinStatus, RichText } from "@/types/game";
 
@@ -28,15 +23,6 @@ export function standingPins(drug: DrugId): PinNumber[] {
 
 export function pinsDownCount(drug: DrugId): number {
   return downPins(drug).length;
-}
-
-/** Outcome visible to the player: hidden until that drug has been rolled. */
-export function revealedStatus(
-  drug: DrugId,
-  n: PinNumber,
-  rolledDrugs: readonly DrugId[],
-): PinStatus | "not-rolled" {
-  return rolledDrugs.includes(drug) ? pinStatus(drug, n) : "not-rolled";
 }
 
 export function drugName(drug: DrugId): string {

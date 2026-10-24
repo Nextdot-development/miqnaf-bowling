@@ -1,7 +1,3 @@
-/**
- * Deterministic discussion-prompt selection. A prompt is never repeated in a
- * session; if nothing eligible is unused, no prompt is shown.
- */
 import { DRUG_ORDER } from "@/data/gameData";
 import type { DrugId, PromptId } from "@/types/game";
 
@@ -27,6 +23,3 @@ export function selectRollPrompt(
   return eligibleRollPrompts(drug, rolledIncludingThis).find((id) => !used.includes(id)) ?? null;
 }
 
-export function selectCoveragePrompt(used: readonly PromptId[]): PromptId | null {
-  return used.includes("C") ? null : "C";
-}

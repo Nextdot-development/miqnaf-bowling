@@ -1,9 +1,15 @@
 import Image from "next/image";
 import { BRAND_ASSETS } from "@/lib/brandAssets";
 
-/** Product logo. Height is set by the caller; width follows the artwork. */
-export function ProductLogo({ className = "", priority = false }: { className?: string; priority?: boolean }) {
-  const { src, alt, width, height } = BRAND_ASSETS.productLogo;
+interface BrandLogoProps {
+  className?: string;
+  priority?: boolean;
+  
+  logo?: "logo" | "productLogo";
+}
+
+export function BrandLogo({ className = "", priority = false, logo = "logo" }: BrandLogoProps) {
+  const { src, alt, width, height } = BRAND_ASSETS[logo];
   return (
     <Image
       src={src}

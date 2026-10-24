@@ -5,12 +5,8 @@ import { gameReducer, initialGameState } from "@/lib/gameReducer";
 import { pinsDownCount, TOTAL_PINS } from "@/lib/gameLogic";
 import { ROLL_TOTAL_MS } from "@/lib/timing";
 import { useGameAudio } from "@/hooks/useGameAudio";
-import type { CoverageMode, DrugId, PinNumber } from "@/types/game";
+import type { DrugId, PinNumber } from "@/types/game";
 
-/**
- * Wires the pure reducer to time and sound. The roll timer lives here (not in
- * the 3D scene) so the outcome never depends on rendering or physics.
- */
 export function useGameState(reducedMotion: boolean) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
   const audio = useGameAudio(state.soundOn);
@@ -23,8 +19,7 @@ export function useGameState(reducedMotion: boolean) {
     return () => window.clearTimeout(done);
   }, [phase, rollId, rollInstant]);
 
-  // Each roll schedules its whole soundtrack once, on the same fixed
-  // timeline as the animation. Which pins clatter comes from the outcome matrix.
+
   const { playRoll } = audio;
   const soundedRoll = useRef(0);
   useEffect(() => {
@@ -40,9 +35,6 @@ export function useGameState(reducedMotion: boolean) {
       newSession: () => dispatch({ type: "NEW_SESSION" }),
       selectDrug: (drug: DrugId) => dispatch({ type: "SELECT_DRUG", drug }),
       chooseAnother: () => dispatch({ type: "CHOOSE_ANOTHER" }),
-      openCoverage: () => dispatch({ type: "OPEN_COVERAGE" }),
-      closeCoverage: () => dispatch({ type: "CLOSE_COVERAGE" }),
-      setCoverageMode: (mode: CoverageMode) => dispatch({ type: "SET_COVERAGE_MODE", mode }),
       openPin: (pin: PinNumber) => dispatch({ type: "OPEN_PIN", pin }),
       closePin: () => dispatch({ type: "CLOSE_PIN" }),
     }),

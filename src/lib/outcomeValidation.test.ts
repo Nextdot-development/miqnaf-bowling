@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DRUG_ORDER, DRUGS, PINS, DISCLAIMER } from "@/data/gameData";
+import { DRUG_ORDER, DRUGS, PINS, DISCLAIMER, FOOTER_NOTE } from "@/data/gameData";
 import { downPins, pinsDownCount, standingPins } from "@/lib/gameLogic";
 import { EXPECTED_LABELS, validateOutcomeMatrix } from "@/lib/outcomeValidation";
 
@@ -66,9 +66,12 @@ describe("supplied copy", () => {
     });
   });
 
-  it("keeps the disclaimer verbatim", () => {
-    expect(DISCLAIMER).toBe(
+  it("keeps both footer texts verbatim", () => {
+    expect(FOOTER_NOTE).toBe(
       "For scientific discussion among healthcare professionals. Pin outcomes are a teaching model built from published in vitro and clinical data. They do not replace the prescribing information, local antibiograms or clinical judgement.",
+    );
+    expect(DISCLAIMER).toBe(
+      "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company.",
     );
   });
 

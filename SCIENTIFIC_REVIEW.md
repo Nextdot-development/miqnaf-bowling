@@ -50,15 +50,14 @@ For each reference, the reviewer should confirm which statement(s) it supports a
 
 ## 4. Regulatory items
 
-- ☐ **Footer disclaimer**: final wording set by regulatory. Current text: "For scientific discussion among healthcare professionals. Pin outcomes are a teaching model built from published in vitro and clinical data. They do not replace the prescribing information, local antibiograms or clinical judgement."
-- ☐ **Intro tagline**: "Roll the right ball. Break the barriers. Explore coverage in CABP." Promotional wording pending approval.
+- ☐ **Footer** (every screen, two lines): final wording set by regulatory. Line 1: "For scientific discussion among healthcare professionals. Pin outcomes are a teaching model built from published in vitro and clinical data. They do not replace the prescribing information, local antibiograms or clinical judgement." Line 2: "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company."
+- ☐ **Intro tagline**: "Roll the right ball. Break the barriers." Promotional wording pending approval.
 - ☐ **Game title**: "Nafithromycin CABP Bowling Game".
-- ☐ **Product logo**: the MIQNAF® logo with "Nafithromycin tablet 400 mg" (supplied artwork, background made transparent) appears in the header and on the intro screen. Confirm placement, and that showing it next to the comparator content is acceptable.
+- ☐ **Logo**: the Wockhardt Respiratory logo (supplied artwork) appears in the header and on the intro screen, and its red "W" is the browser icon. The MIQNAF® logo ("Nafithromycin tablet 400 mg") appears only on the end pop-ups: "You have won the game / Thank you for playing" and "Unfortunately pins are still up / Thanks for attempting". Confirm placement, and that showing it next to the comparator content is acceptable.
 - ☐ **Sound effects**: `public/soundeffects/` holds two recordings named `freesound_community-…` (bowling ball roll, bowling strike). Confirm their licence covers use at the event and whether attribution is needed.
 - ☐ **Sound on by default**: the original brief asked for sound OFF by default; the client asked for it ON. Audio still only starts after the first tap, and the header switch turns it off.
 - ☐ **Fonts**: confirm the Acumin and Helvetica Neue licences cover embedding in this web/kiosk build.
 - ☐ **Ball colours**: interface identifiers only (brand palette). Confirm they do not imply potency.
-- ☐ **Coverage board "Full reference matrix" view**: this shows outcomes for balls not yet rolled, but only after the user explicitly switches to it. Confirm this is acceptable.
 
 ## 5. Discrepancies log
 

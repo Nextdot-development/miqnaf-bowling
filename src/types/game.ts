@@ -1,4 +1,4 @@
-/** Shared types for the Nafithromycin CABP Bowling Game. */
+/** Shared types for the CABP Bowling Game. */
 
 export type DrugId = "azithromycin" | "clarithromycin" | "nafithromycin";
 
@@ -6,10 +6,6 @@ export type PinNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export type PinStatus = "down" | "standing";
 
-/**
- * Rich text for scientific copy. Plain strings render as-is; `{ em }`
- * segments render in italics (organism and gene names).
- */
 export type RichSegment = string | { em: string };
 export type RichText = readonly RichSegment[];
 
@@ -57,10 +53,8 @@ export interface RollResult {
   promptId: PromptId | null;
 }
 
-/** Top-level game phase. Coverage and pathogen detail are overlays on top. */
+/** Top-level game phase. The pathogen card is an overlay on top. */
 export type GamePhase = "intro" | "selecting" | "rolling" | "result";
-
-export type CoverageMode = "session" | "reference";
 
 export interface GameState {
   phase: GamePhase;
@@ -77,11 +71,5 @@ export interface GameState {
   result: RollResult | null;
   usedPrompts: PromptId[];
   soundOn: boolean;
-  coverageOpen: boolean;
-  /** Whether the coverage board has been opened this session. */
-  coverageVisited: boolean;
-  coverageMode: CoverageMode;
-  /** Prompt assigned to the current coverage-board visit (if any). */
-  coveragePromptId: PromptId | null;
   openPin: PinNumber | null;
 }

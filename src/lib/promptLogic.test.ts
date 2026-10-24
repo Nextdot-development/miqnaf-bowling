@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectCoveragePrompt, selectRollPrompt } from "@/lib/promptLogic";
+import { selectRollPrompt } from "@/lib/promptLogic";
 
 describe("prompt selection", () => {
   it("uses the drug-specific prompt first", () => {
@@ -21,8 +21,4 @@ describe("prompt selection", () => {
     expect(selectRollPrompt("nafithromycin", ["azithromycin", "clarithromycin", "nafithromycin"], ["B"])).toBe("A");
   });
 
-  it("shows the coverage prompt once", () => {
-    expect(selectCoveragePrompt([])).toBe("C");
-    expect(selectCoveragePrompt(["C"])).toBeNull();
-  });
 });

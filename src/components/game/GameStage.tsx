@@ -5,10 +5,11 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { pinPosition } from "@/lib/laneLayout";
 import { createProjector } from "@/lib/projection";
-import { DRUGS, PINS } from "@/data/gameData";
+import { DRUGS } from "@/data/gameData";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useWebGLSupport } from "@/hooks/useWebGLSupport";
 import type { DrugId, GamePhase, Pin, RollResult } from "@/types/game";
+import { BallLabels } from "./BallLabels";
 import type { BowlingSceneProps } from "./BowlingScene";
 import { LaneFallback2D } from "./LaneFallback2D";
 import { PinLabelsOverlay } from "./PinLabelsOverlay";
@@ -146,6 +147,8 @@ export function GameStage({
         />
       )}
 
+      {phase === "intro" && <BallLabels width={stageSize.width} height={stageSize.height} />}
+
       {onRoll && (
         <SwipeToRoll
           phase={phase}
@@ -203,16 +206,6 @@ export function GameStage({
         )}
       </AnimatePresence>
     </div>
-      {compact && phase !== "intro" && (
-        <ul className="mt-2 grid grid-cols-4 gap-x-2 gap-y-1 text-xs font-semibold text-ink-muted sm:text-sm" aria-hidden>
-          {PINS.map((p) => (
-            <li key={p.number} className="flex items-center gap-1">
-              <span className="pin-chip-num">{p.number}</span>
-              {p.label}
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

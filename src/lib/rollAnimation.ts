@@ -1,8 +1,3 @@
-/**
- * Pure, drug-agnostic roll timeline. The ball's pose depends only on elapsed
- * time; pins only need to know whether they are scripted to fall. Which pins
- * fall is decided by the outcome matrix (gameLogic), never by this module.
- */
 import {
   BALL_RADIUS,
   BALL_START_Z,
@@ -113,12 +108,6 @@ export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number): PinPos
   };
 }
 
-/**
- * Swipe-to-roll "aim": while the player drags the ball it creeps forward
- * (up to AIM_REACH), and once the roll starts that offset fades out over
- * AIM_BLEND_MS. The swipe never changes the path, speed or outcome; every
- * roll converges on the same fixed timeline within a fifth of a second.
- */
 export const AIM_REACH = 0.35;
 export const AIM_BLEND_MS = 220;
 

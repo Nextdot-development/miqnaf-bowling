@@ -1,9 +1,3 @@
-/**
- * World-space layout shared by the 3D scene and the 2D fallback.
- * Units are roughly metres; the lane is foreshortened (like the design
- * mock-ups) so the ball and all eight pin labels stay large and legible.
- * The ball travels down x = 0 (the lane centre-line) for every roll.
- */
 import { PINS } from "@/data/gameData";
 import type { PinNumber } from "@/types/game";
 
@@ -16,8 +10,14 @@ export const ARROWS_Z = -1.25;
 export const BALL_RADIUS = 0.11;
 export const BALL_START_Z = -0.05;
 
-export const PIN_HEIGHT = 0.5;
-export const PIN_MAX_RADIUS = 0.075;
+/** Intro screen: the three balls sit side by side at the start position. */
+export const INTRO_BALL_SPACING = 0.55;
+export function introBallX(index: number): number {
+  return (index - 1) * INTRO_BALL_SPACING;
+}
+
+export const PIN_HEIGHT = 0.58;
+export const PIN_MAX_RADIUS = 0.087;
 export const PIN_SPACING = 0.4;
 
 /** Pin silhouette: [height fraction, radius as a fraction of max]. */
@@ -61,10 +61,6 @@ export function verticalFovFor(aspect: number): number {
   return Math.min(CAMERA.maxVerticalFov, Math.max(CAMERA.minVerticalFov, v));
 }
 
-/**
- * Front row 1–4 straddles the centre-line, leaving a ball-width gap between
- * pins 2 and 3. Rear row 5–8 is staggered half a spacing to the right.
- */
 export function pinPosition(n: PinNumber): { x: number; z: number } {
   const pin = PINS.find((p) => p.number === n);
   const index = (n - 1) % 4;

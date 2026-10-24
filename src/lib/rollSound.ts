@@ -1,8 +1,3 @@
-/**
- * Sound plan for a roll, using the supplied recordings in
- * public/soundeffects/. Pure: says which file plays when and how loud, timed
- * from the same fixed timeline as the animation. useGameAudio plays it.
- */
 import { FRONT_ROW_Z } from "@/lib/laneLayout";
 import { ballArrivalSeconds } from "@/lib/rollAnimation";
 
@@ -15,10 +10,6 @@ export const SOUND_FILES = {
 
 export type SoundName = keyof typeof SOUND_FILES;
 
-/**
- * Where the first audible sound starts inside each file (seconds), measured
- * from the recordings. Used to line them up with the animation.
- */
 export const SOUND_ONSETS: Readonly<Record<SoundName, number>> = {
   roll: 0.125,
   strike: 0.198,
@@ -38,12 +29,6 @@ export interface SoundCue {
 /** Seconds from release until the ball meets the front row of pins. */
 export const IMPACT_SECONDS = ballArrivalSeconds(FRONT_ROW_Z);
 
-/**
- * The roll sound plays from release and fades out as the ball reaches the
- * pins; the strike's first hit lands at impact. The crash is a little quieter
- * when fewer pins fall. Reduced-motion rolls skip the roll and play the strike
- * straight away.
- */
 export function buildSoundCues(pinsDown: number, totalPins: number, instant = false): SoundCue[] {
   const strikeGain = 0.55 + 0.45 * Math.max(0, Math.min(1, pinsDown / totalPins));
   if (instant) return [{ sound: "strike", at: 0.05, gain: strikeGain }];

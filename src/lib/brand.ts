@@ -1,8 +1,4 @@
-/**
- * Official brand palette: the only place brand hex values are defined.
- * CSS custom properties are generated from this in src/app/layout.tsx, and
- * the 3D scene imports it directly.
- */
+
 export const BRAND = {
   red: "#9A1F24",
   navy: "#28397F",
@@ -26,7 +22,6 @@ export const SCENE = {
   backdropTop: "#152052",
   backdropLow: "#8C99C9",
   backdropBottom: "#C9D1EA",
-  spotInk: "#4A2F15",
   gutter: "#121A45",
   pinWhite: "#F7F5F0",
   pinStripe: BRAND.red,
@@ -52,7 +47,6 @@ const TOKENS: Record<string, string> = {
   "stage-top": SCENE.backdropTop,
   "stage-low": SCENE.backdropLow,
   "stage-bottom": SCENE.backdropBottom,
-  "spot-ink": SCENE.spotInk,
 };
 
 /** `:root` block exposing every token as `--name` (hex) and `--name-rgb`. */

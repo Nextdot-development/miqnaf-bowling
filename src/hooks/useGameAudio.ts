@@ -3,14 +3,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { buildSoundCues, SOUND_FILES, SOUND_ONSETS, type SoundName } from "@/lib/rollSound";
 
-/**
- * Plays the supplied bowling recordings (public/soundeffects/) with the Web
- * Audio API, so each roll is scheduled precisely against the animation.
- *
- * Sound is on by default. Browsers only allow audio after a user gesture, so
- * the audio context is created (and the files decoded) on the first tap or
- * key press, which is the START GAME tap on the kiosk.
- */
 export function useGameAudio(enabled: boolean) {
   const ctxRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<GainNode | null>(null);
@@ -55,10 +47,6 @@ export function useGameAudio(enabled: boolean) {
     ensureContext();
   }, [ensureContext]);
 
-  // Sound is on by default: unlock on the first interaction anywhere.
-  // A finger touching down is NOT a user activation in browsers; only lifting
-  // it (pointerup / touchend), a click or a key press is. So listen to all of
-  // them and keep trying until the audio context is actually running.
   useEffect(() => {
     if (!enabled) return;
     const events = ["pointerdown", "pointerup", "touchend", "click", "keydown"] as const;

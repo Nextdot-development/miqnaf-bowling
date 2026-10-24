@@ -1,11 +1,3 @@
-/**
- * Kiosk fit check: walks through every screen and state at the touch
- * screen's 16:9 sizes (with and without browser chrome) and reports any page
- * or panel that would need scrolling. Dev tool only.
- *
- *   npm run build && npm start      (in one terminal)
- *   node scripts/fit-check.mjs [url]
- */
 import puppeteer from "puppeteer-core";
 import fs from "node:fs";
 

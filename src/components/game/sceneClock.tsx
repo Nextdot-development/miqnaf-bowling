@@ -6,14 +6,9 @@ import type { GamePhase } from "@/types/game";
 export interface SceneTimeline {
   phase: GamePhase;
   rollStartedAt: number | null;
-  /** Swipe progress 0..1 while the player drags the ball (see aimOffset). */
   aim: MutableRefObject<number>;
 }
 
-/**
- * Shared mutable timeline read inside useFrame. Kept in a ref so animation
- * frames never trigger React renders.
- */
 export const SceneTimelineContext = createContext<MutableRefObject<SceneTimeline> | null>(null);
 
 export function useSceneTimeline() {

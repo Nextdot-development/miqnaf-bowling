@@ -7,24 +7,24 @@
  */
 import type { Drug, DrugId, Pin } from "@/types/game";
 
-export const GAME_TITLE = "Nafithromycin CABP Bowling Game";
+export const GAME_TITLE = "CABP Bowling Game";
 
 export const INTRO_TAGLINE = [
   "Roll the right ball.",
   "Break the barriers.",
-  "Explore coverage in CABP.",
 ] as const;
 
 /** Phrase emphasised in each tagline line (presentation only; wording above). */
 export const INTRO_TAGLINE_EMPHASIS: Readonly<Record<(typeof INTRO_TAGLINE)[number], string>> = {
   "Roll the right ball.": "right ball",
   "Break the barriers.": "barriers",
-  "Explore coverage in CABP.": "coverage in CABP",
 };
 
-/** Mandatory footer. Regulatory sets the final wording. */
-export const DISCLAIMER =
+export const FOOTER_NOTE =
   "For scientific discussion among healthcare professionals. Pin outcomes are a teaching model built from published in vitro and clinical data. They do not replace the prescribing information, local antibiograms or clinical judgement.";
+
+export const DISCLAIMER =
+  "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company.";
 
 export const DRUG_ORDER: readonly DrugId[] = ["azithromycin", "clarithromycin", "nafithromycin"];
 

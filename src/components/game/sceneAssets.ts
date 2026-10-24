@@ -1,8 +1,3 @@
-/**
- * Procedural textures and geometry for the bowling scene. Everything is
- * generated locally from canvas and math, so no models or images load over
- * the network. Client-only (uses document).
- */
 import * as THREE from "three";
 import { SCENE } from "@/lib/brand";
 import { PIN_HEIGHT, PIN_MAX_RADIUS, PIN_PROFILE } from "@/lib/laneLayout";
@@ -135,21 +130,6 @@ export function createBallTexture(seed: number): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
-  return tex;
-}
-
-/** Dashed outline marking where a fallen pin stood. */
-export function createSpotTexture(): THREE.CanvasTexture {
-  const S = 128;
-  const { c, ctx } = canvas(S, S);
-  ctx.strokeStyle = "rgba(55, 35, 15, 0.9)";
-  ctx.lineWidth = 8;
-  ctx.setLineDash([12, 9]);
-  ctx.beginPath();
-  ctx.arc(S / 2, S / 2, S / 2 - 6, 0, Math.PI * 2);
-  ctx.stroke();
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 

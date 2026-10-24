@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { PINS } from "@/data/gameData";
+import { DRUG_ORDER, PINS } from "@/data/gameData";
 import { SCENE } from "@/lib/brand";
-import { ballColor } from "@/lib/drugVisuals";
+import { BALL_COLORS, ballColor } from "@/lib/drugVisuals";
 import { pinStatus } from "@/lib/gameLogic";
 import {
   ARROWS_Z,
   BALL_RADIUS,
+  BALL_START_Z,
+  introBallX,
   DECK_END_Z,
   FOUL_LINE_Z,
   GUTTER_WIDTH,
@@ -37,12 +39,20 @@ function quad(p: Projector, x0: number, x1: number, zNear: number, zFar: number,
     .join(" ");
 }
 
+/** Unit-radius ball with finger holes, centred on the origin. */
+function BallGlyph({ gradientId }: { gradientId: string }) {
+  return (
+    <>
+      <circle r="1" fill={`url(#${gradientId})`} />
+      <circle cx="-0.25" cy="-0.45" r="0.1" fill="#111" />
+      <circle cx="0.25" cy="-0.45" r="0.1" fill="#111" />
+      <circle cx="0" cy="-0.15" r="0.12" fill="#111" />
+    </>
+  );
+}
+
 type FallbackProps = Pick<BowlingSceneProps, "phase" | "ballDrug" | "outcomeDrug" | "rollStartedAt">;
 
-/**
- * 2D lane used when WebGL is unavailable and while the 3D scene loads.
- * Same layout, timeline and outcome helpers as the 3D scene.
- */
 export function LaneFallback2D({
   phase,
   ballDrug,
@@ -76,7 +86,7 @@ export function LaneFallback2D({
       const br = Math.abs(project(b.x, b.y + BALL_RADIUS, b.z).y - bc.y);
       if (ballRef.current) {
         ballRef.current.setAttribute("transform", `translate(${bc.x} ${bc.y}) scale(${br})`);
-        ballRef.current.style.opacity = b.visible && b.y > -0.05 ? "1" : "0";
+        ballRef.current.style.opacity = ballDrug && b.visible && b.y > -0.05 ? "1" : "0";
       }
 
       PINS.forEach((pin, i) => {
@@ -98,7 +108,7 @@ export function LaneFallback2D({
     draw();
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project, phase, rollStartedAt, outcomeDrug]);
+  }, [project, phase, rollStartedAt, outcomeDrug, ballDrug]);
 
   const color = ballColor(ballDrug);
 
@@ -112,11 +122,16 @@ export function LaneFallback2D({
               <stop offset="0.6" stopColor="#e8c08a" />
               <stop offset="1" stopColor="#f5dfba" />
             </linearGradient>
-            <radialGradient id="ball2d" cx="0.35" cy="0.3" r="0.8">
-              <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
-              <stop offset="0.35" stopColor={color} stopOpacity="1" />
-              <stop offset="1" stopColor="#000000" stopOpacity="0.55" />
-            </radialGradient>
+            {[
+              ["ball2d", color],
+              ...DRUG_ORDER.map((id) => [`ball2d-${id}`, BALL_COLORS[id]]),
+            ].map(([id, fill]) => (
+              <radialGradient key={id} id={id} cx="0.35" cy="0.3" r="0.8">
+                <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
+                <stop offset="0.35" stopColor={fill} stopOpacity="1" />
+                <stop offset="1" stopColor="#000000" stopOpacity="0.55" />
+              </radialGradient>
+            ))}
           </defs>
           <polygon
             points={quad(project, -LANE_HALF_WIDTH - GUTTER_WIDTH - 0.3, LANE_HALF_WIDTH + GUTTER_WIDTH + 0.3, LANE_NEAR_Z, DECK_END_Z)}
@@ -146,12 +161,8 @@ export function LaneFallback2D({
               const { x, z } = pinPosition(pin.number);
               const base = project(x, 0, z);
               const h = base.y - project(x, PIN_HEIGHT, z).y;
-              const spot = phase === "result" && falls(pin.number);
               return (
                 <g key={pin.number}>
-                  {spot && (
-                    <ellipse cx={base.x} cy={base.y} rx={h * 0.32} ry={h * 0.11} fill="none" stroke="#5b3b1d" strokeDasharray="4 3" strokeWidth="1.5" />
-                  )}
                   <g
                     ref={(el) => {
                       pinRefs.current[i] = el;
@@ -167,11 +178,20 @@ export function LaneFallback2D({
             })}
 
           <g ref={ballRef}>
-            <circle r="1" fill="url(#ball2d)" />
-            <circle cx="-0.25" cy="-0.45" r="0.1" fill="#111" />
-            <circle cx="0.25" cy="-0.45" r="0.1" fill="#111" />
-            <circle cx="0" cy="-0.15" r="0.12" fill="#111" />
+            <BallGlyph gradientId="ball2d" />
           </g>
+
+          {phase === "intro" &&
+            DRUG_ORDER.map((id, i) => {
+              const x = introBallX(i);
+              const c = project(x, BALL_RADIUS, BALL_START_Z);
+              const r = Math.abs(project(x, BALL_RADIUS * 2, BALL_START_Z).y - c.y);
+              return (
+                <g key={id} transform={`translate(${c.x} ${c.y}) scale(${r})`}>
+                  <BallGlyph gradientId={`ball2d-${id}`} />
+                </g>
+              );
+            })}
         </svg>
       )}
 

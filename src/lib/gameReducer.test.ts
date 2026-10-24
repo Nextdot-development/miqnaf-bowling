@@ -60,12 +60,6 @@ describe("game reducer", () => {
     let s = rollDrug(started, "azithromycin"); // B
     s = rollDrug(s, "clarithromycin"); // B used, not all rolled -> none
     expect(s.result?.promptId).toBeNull();
-    s = gameReducer(s, { type: "OPEN_COVERAGE" }); // C
-    expect(s.coveragePromptId).toBe("C");
-    s = gameReducer(s, { type: "CLOSE_COVERAGE" });
-    s = gameReducer(s, { type: "OPEN_COVERAGE" });
-    expect(s.coveragePromptId).toBeNull();
-    s = gameReducer(s, { type: "CLOSE_COVERAGE" });
     s = rollDrug(s, "nafithromycin"); // A is still unused
     expect(s.result?.promptId).toBe("A");
     s = rollDrug(s, "azithromycin"); // D
@@ -94,7 +88,16 @@ describe("game reducer", () => {
     s = gameReducer(s, { type: "CHOOSE_ANOTHER" });
     expect(s.rolledDrugs).toEqual(["nafithromycin"]);
     s = gameReducer(s, { type: "NEW_SESSION" });
-    expect(s).toMatchObject({ phase: "intro", rolledDrugs: [], usedPrompts: [], soundOn: true, coverageVisited: false });
+    expect(s).toMatchObject({ phase: "intro", rolledDrugs: [], usedPrompts: [], soundOn: true });
+  });
+
+  it("keeps roll ids unique across sessions (each roll's sound is keyed on its id)", () => {
+    let s = rollDrug(started, "azithromycin");
+    const first = s.rollId;
+    s = gameReducer(s, { type: "NEW_SESSION" });
+    s = gameReducer(s, { type: "START_SESSION" });
+    s = rollDrug(s, "clarithromycin");
+    expect(s.rollId).toBeGreaterThan(first);
   });
 
   it("does not open pin cards mid-roll", () => {

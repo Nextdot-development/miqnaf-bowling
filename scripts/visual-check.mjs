@@ -1,12 +1,3 @@
-/**
- * Drives the running app in headless Chrome/Edge and saves screenshots of
- * each game state. Dev tool only.
- *
- *   npm run build && npm start            (in one terminal)
- *   node scripts/visual-check.mjs [url] [outDir]
- *
- * Set BROWSER_PATH to override the browser executable.
- */
 import puppeteer from "puppeteer-core";
 import fs from "node:fs";
 import path from "node:path";
