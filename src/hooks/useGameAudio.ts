@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { scheduleEndSound, type EndOutcome } from "@/lib/endSound";
 import { buildSoundCues, SOUND_FILES, SOUND_ONSETS, type SoundName } from "@/lib/rollSound";
 
 export function useGameAudio(enabled: boolean) {
@@ -8,7 +9,7 @@ export function useGameAudio(enabled: boolean) {
   const masterRef = useRef<GainNode | null>(null);
   const buffersRef = useRef<Partial<Record<SoundName, AudioBuffer>>>({});
   const loadingRef = useRef<Promise<void> | null>(null);
-  const activeRef = useRef<Set<AudioBufferSourceNode>>(new Set());
+  const activeRef = useRef<Set<AudioScheduledSourceNode>>(new Set());
 
   const ensureContext = useCallback((): AudioContext | null => {
     if (typeof window === "undefined") return null;
@@ -126,5 +127,20 @@ export function useGameAudio(enabled: boolean) {
     [enabled, ensureContext],
   );
 
-  return { unlock, playRoll, stopAll };
+  /** Win (confetti pops + chime) or lose ("wah-wah") sound for the end pop-up. */
+  const playEnding = useCallback(
+    (outcome: EndOutcome) => {
+      if (!enabled) return;
+      const ctx = ensureContext();
+      const master = masterRef.current;
+      if (!ctx || !master) return;
+      scheduleEndSound(ctx, master, outcome, ctx.currentTime + 0.03, (node) => {
+        activeRef.current.add(node);
+        node.onended = () => activeRef.current.delete(node);
+      });
+    },
+    [enabled, ensureContext],
+  );
+
+  return { unlock, playRoll, playEnding, stopAll };
 }

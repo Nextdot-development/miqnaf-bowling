@@ -55,6 +55,7 @@ For each reference, the reviewer should confirm which statement(s) it supports a
 - ☐ **Game title**: "Nafithromycin CABP Bowling Game".
 - ☐ **Logo**: the Wockhardt Respiratory logo (supplied artwork) appears in the header and on the intro screen, and its red "W" is the browser icon. The MIQNAF® logo ("Nafithromycin tablet 400 mg") appears only on the end pop-ups: "You have won the game / Thank you for playing" and "Unfortunately pins are still up / Thanks for attempting". Confirm placement, and that showing it next to the comparator content is acceptable.
 - ☐ **Sound effects**: `public/soundeffects/` holds two recordings named `freesound_community-…` (bowling ball roll, bowling strike). Confirm their licence covers use at the event and whether attribution is needed.
+- ☐ **End-of-game sounds**: the win (confetti pops and a rising chime) and lose (soft descending "wah-wah") sounds are generated in code, not recordings, so no licence applies. Confirm the lose sound suits the event.
 - ☐ **Sound on by default**: the original brief asked for sound OFF by default; the client asked for it ON. Audio still only starts after the first tap, and the header switch turns it off.
 - ☐ **Fonts**: confirm the Acumin and Helvetica Neue licences cover embedding in this web/kiosk build.
 - ☐ **Ball colours**: interface identifiers only (brand palette). Confirm they do not imply potency.

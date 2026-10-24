@@ -54,7 +54,7 @@ export function useGameState(reducedMotion: boolean) {
     [unlock],
   );
 
-  return { state, ...actions, roll, setSound };
+  return { state, ...actions, roll, setSound, playEnding: audio.playEnding };
 }
 
 export type GameController = ReturnType<typeof useGameState>;

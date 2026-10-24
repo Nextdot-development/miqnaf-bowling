@@ -86,6 +86,13 @@ export function GameShell({ force2D = false }: GameShellProps) {
   }, [outcome, overlayOpen, state.result?.rollId]);
   const shownEnding = state.phase === "result" ? ending : null;
 
+  // Confetti pops and a chime for a win, a soft "wah-wah" for pins left
+  // standing: once, as the pop-up appears (and only with sound on).
+  const { playEnding } = game;
+  useEffect(() => {
+    if (shownEnding) playEnding(shownEnding);
+  }, [shownEnding, playEnding]);
+
   const restart = useCallback(() => {
     setEnding(null);
     game.newSession();
