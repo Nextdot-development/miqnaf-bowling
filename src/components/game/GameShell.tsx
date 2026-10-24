@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DRUGS } from "@/data/gameData";
+import { DRUGS, PRE_ROLL_QUESTION } from "@/data/gameData";
 import { useGameState } from "@/hooks/useGameState";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { joinPinNumbers, pinStatus, richToPlain } from "@/lib/gameLogic";
@@ -18,6 +18,7 @@ import { GameStage } from "./GameStage";
 import { IntroScreen } from "./IntroScreen";
 import { PathogenInfoDialog } from "./PathogenInfoDialog";
 import { PinKey } from "./PinKey";
+import { QuestionPopup } from "./QuestionPopup";
 
 if (process.env.NODE_ENV !== "production") {
   const errors = validateOutcomeMatrix();
@@ -93,6 +94,19 @@ export function GameShell({ force2D = false }: GameShellProps) {
     if (shownEnding) playEnding(shownEnding);
   }, [shownEnding, playEnding]);
 
+  // The pre-roll question pops up once per player, when the lane first opens.
+  const [questionSeen, setQuestionSeen] = useState(false);
+  useEffect(() => {
+    if (state.phase === "intro") setQuestionSeen(false);
+  }, [state.phase]);
+  const showQuestion = state.phase === "selecting" && !questionSeen;
+
+  // A soft chime as the question pops up (only with sound on).
+  const { playQuestion } = game;
+  useEffect(() => {
+    if (showQuestion) playQuestion();
+  }, [showQuestion, playQuestion]);
+
   const restart = useCallback(() => {
     setEnding(null);
     game.newSession();
@@ -155,6 +169,10 @@ export function GameShell({ force2D = false }: GameShellProps) {
       <EndScreen outcome={shownEnding} standing={state.result?.standing} onRestart={restart} />
 
       <PathogenInfoDialog pinNumber={state.openPin} onClose={game.closePin} />
+
+      {/* The question pops up first when the lane opens; once closed it stays
+          on the lane (top card) while the player chooses and swipes. */}
+      <QuestionPopup open={showQuestion} question={PRE_ROLL_QUESTION} onClose={() => setQuestionSeen(true)} />
 
       <Dialog
         open={confirmReset}

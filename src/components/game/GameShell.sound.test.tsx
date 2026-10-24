@@ -5,12 +5,14 @@ import { mediaState } from "@/test/setup";
 import { GameShell } from "./GameShell";
 
 const playEnding = vi.fn();
+const playQuestion = vi.fn();
 vi.mock("@/hooks/useGameAudio", () => ({
-  useGameAudio: () => ({ playRoll: async () => {}, playEnding, unlock: () => {}, stopAll: () => {} }),
+  useGameAudio: () => ({ playRoll: async () => {}, playEnding, playQuestion, unlock: () => {}, stopAll: () => {} }),
 }));
 
 beforeEach(() => {
   playEnding.mockClear();
+  playQuestion.mockClear();
   mediaState.reducedMotion = false;
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 });
@@ -29,9 +31,21 @@ function rollAndWaitForPopup(drug: RegExp) {
 }
 
 describe("end-of-game sounds", () => {
+  it("chimes once as the question pops up", () => {
+    render(<GameShell />);
+    expect(playQuestion).not.toHaveBeenCalled();
+    fireEvent.click(button(/start game/i));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(playQuestion).toHaveBeenCalledTimes(1);
+    fireEvent.click(button(/^Choose a ball$/));
+    fireEvent.click(button(/^Azithromycin/));
+    expect(playQuestion).toHaveBeenCalledTimes(1); // not again while playing
+  });
+
   it("plays the losing sound once when pins are left standing", () => {
     render(<GameShell />);
     fireEvent.click(button(/start game/i));
+    fireEvent.click(button(/^Choose a ball$/));
     rollAndWaitForPopup(/^Azithromycin/);
     expect(screen.getByText("Unfortunately pins are still up")).toBeInTheDocument();
     expect(playEnding).toHaveBeenCalledTimes(1);
@@ -41,6 +55,7 @@ describe("end-of-game sounds", () => {
   it("plays the confetti sound once on a win", () => {
     render(<GameShell />);
     fireEvent.click(button(/start game/i));
+    fireEvent.click(button(/^Choose a ball$/));
     rollAndWaitForPopup(/^Nafithromycin/);
     expect(screen.getByText("You have won the game")).toBeInTheDocument();
     expect(playEnding).toHaveBeenCalledTimes(1);

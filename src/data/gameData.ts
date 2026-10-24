@@ -14,6 +14,9 @@ export const INTRO_TAGLINE = [
   "Break the barriers.",
 ] as const;
 
+/** Asked on the lane while the player chooses a ball, before the roll (client wording). */
+export const PRE_ROLL_QUESTION = "Which of these macrolides will be effective against the pinned bacteria?";
+
 /** Phrase emphasised in each tagline line (presentation only; wording above). */
 export const INTRO_TAGLINE_EMPHASIS: Readonly<Record<(typeof INTRO_TAGLINE)[number], string>> = {
   "Roll the right ball.": "right ball",

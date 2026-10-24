@@ -3,6 +3,7 @@
  *
  * - won:  three crisp confetti "pops", then a clear rising bell chime.
  * - lost: a soft, short descending "wah-wah", ending on a gentle pitch wobble.
+ * - question: a soft two-note rising "ding-ding" as the pre-roll question pops up.
  *
  * Tuned to stay clear on small kiosk speakers: no low thumps, no detuned
  * (chorusing) voices, and an open tone. A light compressor keeps the level
@@ -117,6 +118,24 @@ function wah(
   }
 }
 
+/** Light compression so every sound sits at an even, clear level. */
+function compressor(ctx: BaseAudioContext, out: AudioNode): DynamicsCompressorNode {
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -14;
+  comp.ratio.value = 4;
+  comp.attack.value = 0.002;
+  comp.release.value = 0.15;
+  comp.connect(out);
+  return comp;
+}
+
+/** Schedules the question pop-up chime (G5 then D6), starting at audio time `t0`. */
+export function scheduleQuestionSound(ctx: BaseAudioContext, out: AudioNode, t0: number, track: Track): void {
+  const comp = compressor(ctx, out);
+  bell(ctx, comp, t0, 784, 0.26, 0.55, track);
+  bell(ctx, comp, t0 + 0.13, 1174.7, 0.28, 0.9, track);
+}
+
 /** Schedules the end sound for `outcome`, starting at audio time `t0`. */
 export function scheduleEndSound(
   ctx: BaseAudioContext,
@@ -125,13 +144,7 @@ export function scheduleEndSound(
   t0: number,
   track: Track,
 ): void {
-  // Light compression keeps the pops, bells and wahs at an even, clear level.
-  const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -14;
-  comp.ratio.value = 4;
-  comp.attack.value = 0.002;
-  comp.release.value = 0.15;
-  comp.connect(out);
+  const comp = compressor(ctx, out);
 
   if (outcome === "won") {
     pop(ctx, comp, t0, 2200, track);

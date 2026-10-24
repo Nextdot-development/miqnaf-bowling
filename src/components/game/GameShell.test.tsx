@@ -18,9 +18,13 @@ afterEach(() => {
 const click = (el: HTMLElement) => fireEvent.click(el);
 const button = (name: RegExp) => screen.getByRole("button", { name });
 
+/** Closes the question that pops up when the lane opens. */
+const closeQuestion = () => click(button(/^Choose a ball$/));
+
 function startGame() {
   render(<GameShell />);
   click(button(/start game/i));
+  closeQuestion();
 }
 
 /** The footer's disclaimer line; also checks the teaching-model note is there with it. */
@@ -44,6 +48,8 @@ describe("GameShell", () => {
     render(<GameShell />);
     expect(disclaimer()).toBeVisible();
     click(button(/start game/i));
+    expect(disclaimer()).toBeVisible(); // question pop-up
+    closeQuestion();
     expect(disclaimer()).toBeVisible();
     click(button(/^Azithromycin/));
     click(button(/^Roll the ball/));
@@ -77,6 +83,7 @@ describe("GameShell", () => {
     const ballControl = screen.getByRole("button", { name: /^Roll the ball/ });
     expect(ballControl).toBeDisabled();
     expect(screen.getByText("Choose a ball to roll")).toBeInTheDocument();
+    expect(screen.getByText("Which of these macrolides will be effective against the pinned bacteria?")).toBeInTheDocument();
 
     click(button(/^Azithromycin/));
     expect(ballControl).toBeEnabled();
@@ -127,6 +134,7 @@ describe("GameShell", () => {
 
     // The next player's pop-up gets the full countdown again.
     click(button(/start game/i));
+    closeQuestion();
     click(button(/^Clarithromycin/));
     click(button(/^Roll the ball/));
     act(() => vi.advanceTimersByTime(ROLL_TOTAL_MS + 10));
@@ -174,6 +182,8 @@ describe("GameShell", () => {
     render(<GameShell />);
     screen.getByRole("button", { name: /start game/i }).focus();
     await user.keyboard("{Enter}");
+    await user.keyboard("{Enter}"); // the question pop-up opens with focus on its first button
+    expect(screen.queryByText("Which of these macrolides will be effective against the pinned bacteria?", { selector: "h2" })).not.toBeInTheDocument();
     screen.getByRole("button", { name: /^Clarithromycin/ }).focus();
     await user.keyboard(" ");
     screen.getByRole("button", { name: /^Roll the ball/ }).focus();
@@ -211,6 +221,16 @@ describe("GameShell", () => {
     click(button(/^Nafithromycin/));
     fireEvent.click(button(/^Roll the ball/), { detail: 0 });
     expect(button(/^Pathogen card for pin 7/)).toBeDisabled();
+  });
+
+  it("asks the question in a pop-up first, then keeps it on the lane", () => {
+    render(<GameShell />);
+    click(button(/start game/i));
+    const popup = screen.getByRole("dialog");
+    expect(within(popup).getByText("Which of these macrolides will be effective against the pinned bacteria?")).toBeInTheDocument();
+    closeQuestion();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("Which of these macrolides will be effective against the pinned bacteria?")).toBeInTheDocument(); // the lane card
   });
 
   it("has no coverage board", () => {

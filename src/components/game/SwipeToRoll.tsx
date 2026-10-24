@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronUp } from "lucide-react";
 import { useMemo, useRef, useState, type MutableRefObject, type PointerEvent } from "react";
+import { PRE_ROLL_QUESTION } from "@/data/gameData";
 import { BALL_RADIUS, BALL_START_Z } from "@/lib/laneLayout";
 import { createProjector } from "@/lib/projection";
 import type { GamePhase } from "@/types/game";
@@ -174,15 +175,19 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
         )}
       </AnimatePresence>
 
-      {/* Pinned to the top of the lane; the ball name tags sit along the bottom. */}
+      {/* Top of the lane, between the ball rack and the pin key: the question
+          to think about before rolling, with the current instruction under it. */}
       {(showHint || showPick || dragging) && (
-        <p
-          className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/80 px-6 py-2.5 text-base font-bold text-white shadow-lift sm:text-lg kiosk:px-8 kiosk:py-3 kiosk:text-2xl"
+        <div
+          className="pointer-events-none absolute left-1/2 w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-ink/80 px-5 py-3 text-center shadow-lift backdrop-blur-sm sm:w-[min(46%,44rem)] sm:px-7 sm:py-4"
           style={{ top: -height * ZONE_TOP + 20 }}
-          aria-hidden
         >
-          {showPick ? "Choose a ball to roll" : dragging ? (armed ? "Let go to roll" : "Keep swiping up") : "Swipe the ball up to roll"}
-        </p>
+          <p className="eyebrow text-brand-gold kiosk:text-sm">Question</p>
+          <p className="mt-1 text-base font-bold leading-snug text-white sm:text-xl kiosk:text-[1.55rem]">{PRE_ROLL_QUESTION}</p>
+          <p className="mt-2 text-sm font-semibold text-white/75 sm:text-base kiosk:text-lg" aria-hidden>
+            {showPick ? "Choose a ball to roll" : dragging ? (armed ? "Let go to roll" : "Keep swiping up") : "Swipe the ball up to roll"}
+          </p>
+        </div>
       )}
     </div>
   );

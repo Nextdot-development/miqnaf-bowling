@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { scheduleEndSound, type EndOutcome } from "@/lib/endSound";
+import { scheduleEndSound, scheduleQuestionSound, type EndOutcome } from "@/lib/endSound";
 import { buildSoundCues, SOUND_FILES, SOUND_ONSETS, type SoundName } from "@/lib/rollSound";
 
 export function useGameAudio(enabled: boolean) {
@@ -142,5 +142,17 @@ export function useGameAudio(enabled: boolean) {
     [enabled, ensureContext],
   );
 
-  return { unlock, playRoll, playEnding, stopAll };
+  /** Soft chime as the pre-roll question pops up. */
+  const playQuestion = useCallback(() => {
+    if (!enabled) return;
+    const ctx = ensureContext();
+    const master = masterRef.current;
+    if (!ctx || !master) return;
+    scheduleQuestionSound(ctx, master, ctx.currentTime + 0.03, (node) => {
+      activeRef.current.add(node);
+      node.onended = () => activeRef.current.delete(node);
+    });
+  }, [enabled, ensureContext]);
+
+  return { unlock, playRoll, playEnding, playQuestion, stopAll };
 }
