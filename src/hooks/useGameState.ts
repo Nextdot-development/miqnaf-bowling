@@ -34,7 +34,6 @@ export function useGameState(reducedMotion: boolean) {
       start: () => dispatch({ type: "START_SESSION" }),
       newSession: () => dispatch({ type: "NEW_SESSION" }),
       selectDrug: (drug: DrugId) => dispatch({ type: "SELECT_DRUG", drug }),
-      chooseAnother: () => dispatch({ type: "CHOOSE_ANOTHER" }),
       nextRound: () => dispatch({ type: "NEXT_ROUND" }),
       openPin: (pin: PinNumber) => dispatch({ type: "OPEN_PIN", pin }),
       closePin: () => dispatch({ type: "CLOSE_PIN" }),
@@ -57,5 +56,3 @@ export function useGameState(reducedMotion: boolean) {
 
   return { state, ...actions, roll, setSound, playEnding: audio.playEnding, playQuestion: audio.playQuestion };
 }
-
-export type GameController = ReturnType<typeof useGameState>;

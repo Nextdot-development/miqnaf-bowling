@@ -1,13 +1,11 @@
 import { DRUG_ORDER } from "@/data/gameData";
 import { laneDown, laneStanding, rollLane, TOTAL_PINS } from "@/lib/gameLogic";
-import { selectRollPrompt } from "@/lib/promptLogic";
 import type { DrugId, GameState, PinNumber } from "@/types/game";
 
 export type GameAction =
   | { type: "START_SESSION" }
   | { type: "NEW_SESSION" }
   | { type: "SELECT_DRUG"; drug: DrugId }
-  | { type: "CHOOSE_ANOTHER" }
   | { type: "NEXT_ROUND" }
   | { type: "ROLL"; at: number; instant: boolean }
   | { type: "ROLL_COMPLETE"; rollId: number }
@@ -26,7 +24,6 @@ export const initialGameState: GameState = {
   result: null,
   round: 1,
   cleared: [],
-  usedPrompts: [],
   // On by default (client request); audio starts on the first tap.
   soundOn: true,
   openPin: null,
@@ -36,13 +33,11 @@ function completeRoll(state: GameState): GameState {
   const drug = state.selectedDrug;
   if (!drug) return state;
   const rolledDrugs = state.rolledDrugs.includes(drug) ? state.rolledDrugs : [...state.rolledDrugs, drug];
-  const promptId = selectRollPrompt(drug, rolledDrugs, state.usedPrompts);
   const lane = rollLane(drug, state.cleared);
   return {
     ...state,
     phase: "result",
     rolledDrugs,
-    usedPrompts: promptId ? [...state.usedPrompts, promptId] : state.usedPrompts,
     result: {
       rollId: state.rollId,
       drug,
@@ -51,7 +46,6 @@ function completeRoll(state: GameState): GameState {
       pinsDown: laneDown(lane).length,
       totalPins: TOTAL_PINS,
       standing: laneStanding(lane),
-      promptId,
     },
   };
 }
@@ -82,11 +76,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         rollStartedAt: null,
         rollInstant: false,
       };
-
-    case "CHOOSE_ANOTHER":
-      // "Choose another ball": reset the lane, keep session history.
-      if (state.phase !== "result") return state;
-      return { ...state, phase: "selecting", selectedDrug: null, result: null, rollStartedAt: null, rollInstant: false };
 
     case "NEXT_ROUND":
       // After a round 1 throw that leaves pins up: clear the fallen pins and

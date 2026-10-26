@@ -106,10 +106,10 @@ export function EndScreen({
       ) : (
         <>
           {outcome === "won" ? (
-            // The win heading: highlighted in gold.
+            // The win heading: same style as the try-again heading, in navy.
             <h2
               id="end-heading"
-              className="inline-block rounded-full bg-brand-gold px-7 py-2.5 font-display text-xl font-black uppercase leading-tight tracking-[0.06em] text-brand-navy shadow-[inset_0_-3px_0_rgb(0_0_0/0.14)] sm:text-3xl kiosk:px-[2.25rem] kiosk:py-[0.7rem] kiosk:text-[clamp(1.7rem,3.4vh,2.4rem)]"
+              className="text-[1.6rem] font-black uppercase leading-[1.02] tracking-tight text-brand-navy sm:text-5xl kiosk:text-[clamp(2.2rem,5.4vh,3.6rem)]"
             >
               {COPY[outcome].heading}
             </h2>

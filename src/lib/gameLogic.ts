@@ -30,10 +30,6 @@ export function pinsDownCount(drug: DrugId): number {
   return downPins(drug).length;
 }
 
-export function drugName(drug: DrugId): string {
-  return DRUGS[drug].name;
-}
-
 export function richToPlain(text: RichText): string {
   return text.map((s) => (typeof s === "string" ? s : s.em)).join("");
 }

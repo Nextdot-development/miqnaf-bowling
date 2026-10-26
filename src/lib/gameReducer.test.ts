@@ -41,9 +41,9 @@ describe("game reducer", () => {
 
   it("produces results from the outcome matrix", () => {
     const azi = rollDrug(started, "azithromycin");
-    expect(azi.result).toMatchObject({ drug: "azithromycin", pinsDown: 4, totalPins: 8, standing: [1, 5, 6, 8], promptId: "B" });
+    expect(azi.result).toMatchObject({ drug: "azithromycin", pinsDown: 4, totalPins: 8, standing: [1, 5, 6, 8] });
     const naf = rollDrug(azi, "nafithromycin");
-    expect(naf.result).toMatchObject({ pinsDown: 8, standing: [], promptId: "A" });
+    expect(naf.result).toMatchObject({ pinsDown: 8, standing: [] });
   });
 
   it("selecting another ball resets the lane and result but keeps history", () => {
@@ -53,27 +53,6 @@ describe("game reducer", () => {
     expect(next.result).toBeNull();
     expect(next.rollStartedAt).toBeNull();
     expect(next.rolledDrugs).toEqual(["azithromycin"]);
-    expect(next.usedPrompts).toEqual(["B"]);
-  });
-
-  it("never repeats a prompt within a session", () => {
-    let s = rollDrug(started, "azithromycin"); // B
-    s = rollDrug(s, "amoxclav"); // B used, not all rolled -> none
-    expect(s.result?.promptId).toBeNull();
-    s = rollDrug(s, "nafithromycin"); // A is still unused
-    expect(s.result?.promptId).toBe("A");
-    s = rollDrug(s, "azithromycin"); // D
-    expect(s.result?.promptId).toBe("D");
-    s = rollDrug(s, "nafithromycin"); // nothing left
-    expect(s.result?.promptId).toBeNull();
-    expect(new Set(s.usedPrompts).size).toBe(s.usedPrompts.length);
-  });
-
-  it("matches the mock-up order: azithromycin, nafithromycin, amoxclav -> D", () => {
-    let s = rollDrug(started, "azithromycin");
-    s = rollDrug(s, "nafithromycin");
-    s = rollDrug(s, "amoxclav");
-    expect(s.result?.promptId).toBe("D");
   });
 
   it("reduced-motion rolls resolve immediately with the same outcome", () => {
@@ -85,10 +64,9 @@ describe("game reducer", () => {
   it("only NEW_SESSION clears session history, and it turns sound back on", () => {
     let s = gameReducer(started, { type: "SET_SOUND", on: false });
     s = rollDrug(s, "nafithromycin");
-    s = gameReducer(s, { type: "CHOOSE_ANOTHER" });
     expect(s.rolledDrugs).toEqual(["nafithromycin"]);
     s = gameReducer(s, { type: "NEW_SESSION" });
-    expect(s).toMatchObject({ phase: "intro", rolledDrugs: [], usedPrompts: [], soundOn: true });
+    expect(s).toMatchObject({ phase: "intro", rolledDrugs: [], round: 1, cleared: [], soundOn: true });
   });
 
   it("keeps roll ids unique across sessions (each roll's sound is keyed on its id)", () => {

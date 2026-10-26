@@ -18,13 +18,6 @@ export interface Pin {
   row: "front" | "rear";
   /** Full pin wording (shown in the pin list, cards and pop-ups). */
   name: RichText;
-  /** Supplied resistance mechanism, only where the brief provides one. */
-  mechanism: RichText | null;
-  /** Supplied reason shown when the pin is left standing. */
-  standingReason: RichText | null;
-  /** Supplied basis line, shown verbatim; null where none is supplied. */
-  basis: string | null;
-  whyItMatters: string | null;
   /** Down / standing per drug. The only outcome matrix in the codebase. */
   outcome: Readonly<Record<DrugId, PinStatus>>;
 }
@@ -34,14 +27,6 @@ export type LanePins = Readonly<Record<PinNumber, LanePin>>;
 
 /** Each player gets up to two throws: round 1, then round 2 with the pins left. */
 export type Round = 1 | 2;
-
-export type PromptId = "A" | "B" | "C" | "D";
-
-export interface DiscussionPrompt {
-  id: PromptId;
-  trigger: string;
-  text: string;
-}
 
 export interface RollResult {
   rollId: number;
@@ -54,7 +39,6 @@ export interface RollResult {
   totalPins: number;
   /** Pins still up (including any that only wobbled). */
   standing: PinNumber[];
-  promptId: PromptId | null;
 }
 
 /** Top-level game phase. The pin card is an overlay on top. */
@@ -76,7 +60,6 @@ export interface GameState {
   round: Round;
   /** Pins knocked down in round 1, cleared from the lane for round 2. */
   cleared: PinNumber[];
-  usedPrompts: PromptId[];
   soundOn: boolean;
   openPin: PinNumber | null;
 }
