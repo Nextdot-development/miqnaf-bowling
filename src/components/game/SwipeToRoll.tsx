@@ -175,16 +175,18 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
         )}
       </AnimatePresence>
 
-      {/* Top of the lane, between the ball rack and the pin key: the question
-          to think about before rolling, with the current instruction under it. */}
+      {/* Top of the lane. On the kiosk: the question (between the ball rack and
+          the pin key) with the current instruction under it. On smaller screens
+          the lane is too small for that, so the question sits above the lane
+          (GameShell) and only a compact instruction pill shows here. */}
       {(showHint || showPick || dragging) && (
         <div
-          className="pointer-events-none absolute left-1/2 w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-ink/80 px-5 py-3 text-center shadow-lift backdrop-blur-sm sm:w-[min(46%,44rem)] sm:px-7 sm:py-4"
-          style={{ top: -height * ZONE_TOP + 20 }}
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/80 px-5 py-2 text-center shadow-lift backdrop-blur-sm kiosk:w-[min(46%,44rem)] kiosk:whitespace-normal kiosk:rounded-2xl kiosk:px-7 kiosk:py-4"
+          style={{ top: -height * ZONE_TOP + 16 }}
         >
-          <p className="eyebrow text-brand-gold kiosk:text-sm">Question</p>
-          <p className="mt-1 text-base font-bold leading-snug text-white sm:text-xl kiosk:text-[1.55rem]">{PRE_ROLL_QUESTION}</p>
-          <p className="mt-2 text-sm font-semibold text-white/75 sm:text-base kiosk:text-lg" aria-hidden>
+          <p className="eyebrow hidden text-brand-gold kiosk:block kiosk:text-sm">Question</p>
+          <p className="mt-1 hidden text-xl font-bold leading-snug text-white kiosk:block kiosk:text-[1.55rem]">{PRE_ROLL_QUESTION}</p>
+          <p className="text-sm font-bold text-white sm:text-base kiosk:mt-2 kiosk:text-lg kiosk:font-semibold kiosk:text-white/75" aria-hidden>
             {showPick ? "Choose a ball to roll" : dragging ? (armed ? "Let go to roll" : "Keep swiping up") : "Swipe the ball up to roll"}
           </p>
         </div>

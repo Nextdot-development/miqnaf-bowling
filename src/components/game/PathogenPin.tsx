@@ -19,6 +19,8 @@ interface PathogenPinProps {
   skin: THREE.Texture;
   /** Whether the outcome matrix scripts this pin to fall on the current roll. */
   falls: boolean;
+  /** Half-knocked: rocks as if about to fall, then stays up. */
+  wobbles?: boolean;
   interactive: boolean;
   onSelect: (pin: Pin) => void;
 }
@@ -28,6 +30,7 @@ export function PathogenPin({
   geometry,
   skin,
   falls,
+  wobbles = false,
   interactive,
   onSelect,
 }: PathogenPinProps) {
@@ -37,6 +40,8 @@ export function PathogenPin({
   // Keep the latest outcome in a ref so the frame loop never goes stale.
   const fallsRef = useRef(falls);
   fallsRef.current = falls;
+  const wobblesRef = useRef(wobbles);
+  wobblesRef.current = wobbles;
 
   const material = useMemo(
     () =>
@@ -55,7 +60,7 @@ export function PathogenPin({
   useFrame(() => {
     const g = body.current;
     if (!g) return;
-    const pose = pinPose(pin.number, fallsRef.current, elapsedMs(timeline.current, performance.now()));
+    const pose = pinPose(pin.number, fallsRef.current, elapsedMs(timeline.current, performance.now()), wobblesRef.current);
     g.position.set(pose.dx, pose.lift, pose.dz);
     tmpAxis.set(pose.axisX, 0, pose.axisZ);
     g.quaternion.setFromAxisAngle(tmpAxis, pose.angle);

@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { INTRO_TAGLINE, INTRO_TAGLINE_EMPHASIS } from "@/data/gameData";
+import { laneBefore } from "@/lib/gameLogic";
 import type { Pin } from "@/types/game";
 import { GameStage } from "./GameStage";
 import { BrandLogo } from "./BrandLogo";
@@ -13,6 +14,9 @@ interface IntroScreenProps {
 }
 
 const noop = () => {};
+
+/** All eight pins up on the preview lane. */
+const INTRO_LANE = laneBefore([]);
 
 const HOW_TO_PLAY = [
   { label: "Pick a ball", hint: "Choose one of the three" },
@@ -41,7 +45,7 @@ export function IntroScreen({ onStart, pinName }: IntroScreenProps) {
             <motion.h1 {...rise(0.06)} className="font-black leading-[0.98] tracking-tight text-brand-navy">
               <span className="block whitespace-nowrap text-[2.4rem] uppercase sm:text-6xl kiosk:text-[4.8rem]">
                 CABP Bowling
-                <span className="block text-brand-red">Game</span>
+                <span className="block text-brand-red">Challenge</span>
               </span>
             </motion.h1>
 
@@ -115,6 +119,7 @@ export function IntroScreen({ onStart, pinName }: IntroScreenProps) {
         >
           <GameStage
             phase="intro"
+            lane={INTRO_LANE}
             selectedDrug={null}
             result={null}
             rollStartedAt={null}

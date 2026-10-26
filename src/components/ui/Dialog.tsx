@@ -12,7 +12,7 @@ interface DialogProps {
   onClose: () => void;
   title: ReactNode;
   eyebrow?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
   footer?: ReactNode;
   size?: "md" | "lg";
 }
@@ -88,7 +88,11 @@ export function Dialog({ open, onClose, title, eyebrow, children, footer, size =
             exit={reduce ? { opacity: 0 } : { y: 16, opacity: 0 }}
             transition={{ duration: reduce ? 0 : 0.22, ease: "easeOut" }}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-line px-6 pb-4 pt-5 sm:px-8">
+            <div
+              className={`flex justify-between gap-4 px-6 sm:px-8 ${
+                children || footer ? "items-start border-b border-line pb-4 pt-5" : "items-center py-6"
+              }`}
+            >
               <div className="min-w-0">
                 {eyebrow && <div className="eyebrow mb-1">{eyebrow}</div>}
                 <h2 id={titleId} className="text-2xl font-black leading-tight text-brand-navy sm:text-3xl">
@@ -104,8 +108,8 @@ export function Dialog({ open, onClose, title, eyebrow, children, footer, size =
                 <X className="h-6 w-6" aria-hidden />
               </button>
             </div>
-            <div className="overflow-y-auto px-6 py-5 sm:px-8">{children}</div>
-            {footer && <div className="border-t border-line px-6 py-4 sm:px-8">{footer}</div>}
+            {children && <div className="overflow-y-auto px-6 py-5 sm:px-8">{children}</div>}
+            {footer && <div className={`px-6 py-4 sm:px-8 ${children ? "border-t border-line" : ""}`}>{footer}</div>}
           </motion.div>
         </motion.div>
       )}

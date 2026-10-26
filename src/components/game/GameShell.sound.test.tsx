@@ -42,11 +42,15 @@ describe("end-of-game sounds", () => {
     expect(playQuestion).toHaveBeenCalledTimes(1); // not again while playing
   });
 
-  it("plays the losing sound once when pins are left standing", () => {
+  it("plays nothing between rounds, then the losing sound once if round 2 leaves pins up", () => {
     render(<GameShell />);
     fireEvent.click(button(/start game/i));
     fireEvent.click(button(/^Choose a ball$/));
     rollAndWaitForPopup(/^Azithromycin/);
+    expect(screen.getByText("Good coverage, but some critical respiratory challenges remain.")).toBeInTheDocument();
+    expect(playEnding).not.toHaveBeenCalled();
+    fireEvent.click(button(/^Round 2/));
+    rollAndWaitForPopup(/^Amox.clav/);
     expect(screen.getByText("Unfortunately pins are still up")).toBeInTheDocument();
     expect(playEnding).toHaveBeenCalledTimes(1);
     expect(playEnding).toHaveBeenCalledWith("lost");
@@ -57,7 +61,7 @@ describe("end-of-game sounds", () => {
     fireEvent.click(button(/start game/i));
     fireEvent.click(button(/^Choose a ball$/));
     rollAndWaitForPopup(/^Nafithromycin/);
-    expect(screen.getByText("You have won the game")).toBeInTheDocument();
+    expect(screen.getByText("STRIKE!")).toBeInTheDocument();
     expect(playEnding).toHaveBeenCalledTimes(1);
     expect(playEnding).toHaveBeenCalledWith("won");
   });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BALL_START_Z, FRONT_ROW_Z } from "@/lib/laneLayout";
-import { AIM_BLEND_MS, AIM_REACH, aimOffset, ballPose, finalPinPose, pinPose } from "@/lib/rollAnimation";
+import { AIM_BLEND_MS, AIM_REACH, aimOffset, ballPose, finalPinPose, pinPose, pinReactionStart } from "@/lib/rollAnimation";
+import { ROLL_TOTAL_MS } from "@/lib/timing";
 import { BALL_TRAVEL_MS } from "@/lib/timing";
 import type { PinNumber } from "@/types/game";
 
@@ -39,5 +40,26 @@ describe("roll animation", () => {
     expect(aimOffset("rolling", AIM_BLEND_MS, 1)).toBe(0);
     expect(aimOffset("rolling", 2000, 1)).toBe(0);
     expect(aimOffset("result", 0, 1)).toBe(0);
+  });
+});
+
+describe("half-knocked (wobbling) pin", () => {
+  const hit = pinReactionStart(5) * 1000;
+  const angles = Array.from({ length: 60 }, (_, i) => pinPose(5, false, hit + i * 20, true).angle);
+
+  it("leans well over, as if about to fall, then rocks back past upright", () => {
+    expect(Math.max(...angles)).toBeGreaterThan(0.3); // about 20 degrees or more
+    expect(Math.min(...angles)).toBeLessThan(-0.05); // swings back the other way
+  });
+
+  it("is still before the hit, settles before the result, and ends upright", () => {
+    expect(pinPose(5, false, hit - 50, true).angle).toBe(0);
+    expect(Math.abs(pinPose(5, false, ROLL_TOTAL_MS, true).angle)).toBeLessThan(0.05);
+    expect(finalPinPose(5, false, true)).toMatchObject({ angle: 0, opacity: 1 });
+  });
+
+  it("rocks far more than an untouched standing pin", () => {
+    const plain = Array.from({ length: 60 }, (_, i) => Math.abs(pinPose(5, false, hit + i * 20).angle));
+    expect(Math.max(...angles)).toBeGreaterThan(4 * Math.max(...plain));
   });
 });

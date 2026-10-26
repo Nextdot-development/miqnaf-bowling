@@ -81,10 +81,36 @@ export function fallDirection(n: PinNumber): { x: number; z: number } {
   return { x: side / len, z: -1 / len };
 }
 
-export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number): PinPose {
+/** A half-knocked pin's first lean (radians) and how fast its rocking dies away. */
+const ROCK_ANGLE = 0.44;
+const ROCK_DECAY = 3.2;
+const ROCK_HZ = 2.1;
+
+/**
+ * Pose of pin `n` at `elapsedMs` into the roll. `wobbles` (only for a pin
+ * that does not fall) makes it rock hard toward its fall direction, as if
+ * about to go over, then settle upright.
+ */
+export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number, wobbles = false): PinPose {
   const u = elapsedMs / 1000 - pinReactionStart(n);
   const rest: PinPose = { dx: 0, dz: 0, lift: 0, axisX: 1, axisZ: 0, angle: 0, opacity: 1, dim: 0 };
   if (u <= 0) return rest;
+
+  if (!falls && wobbles) {
+    // Tip toward the fall direction, rock back past upright, and settle.
+    // The swings shrink to nothing well before the result is shown.
+    const dir = fallDirection(n);
+    const angle = Number.isFinite(u) ? ROCK_ANGLE * Math.exp(-ROCK_DECAY * u) * Math.sin(2 * Math.PI * ROCK_HZ * u) : 0;
+    return {
+      ...rest,
+      // Rocks on the edge of its base, so it lifts a little as it leans.
+      lift: PIN_MAX_RADIUS * 0.6 * Math.abs(Math.sin(angle)),
+      axisX: dir.z,
+      axisZ: -dir.x,
+      angle,
+      dim: clamp01(u / 0.9),
+    };
+  }
 
   if (!falls) {
     // A brief wobble from the passing ball, then the pin stays upright, dimmed.
@@ -124,6 +150,6 @@ export function ballArrivalSeconds(z: number): number {
 }
 
 /** Final pose used for the result state and reduced-motion rolls. */
-export function finalPinPose(n: PinNumber, falls: boolean): PinPose {
-  return pinPose(n, falls, Number.POSITIVE_INFINITY);
+export function finalPinPose(n: PinNumber, falls: boolean, wobbles = false): PinPose {
+  return pinPose(n, falls, Number.POSITIVE_INFINITY, wobbles);
 }

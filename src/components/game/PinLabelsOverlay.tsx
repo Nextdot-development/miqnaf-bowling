@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { PINS } from "@/data/gameData";
-import { pinStatus } from "@/lib/gameLogic";
 import { FRONT_ROW_Z, PIN_HEIGHT, pinPosition } from "@/lib/laneLayout";
 import { createProjector } from "@/lib/projection";
 import { ballArrivalSeconds } from "@/lib/rollAnimation";
@@ -10,18 +9,18 @@ import { ballArrivalSeconds } from "@/lib/rollAnimation";
 /** When the ball reaches the front row, measured from the start of the roll. */
 const HIT_SECONDS = ballArrivalSeconds(FRONT_ROW_Z);
 import { useElementSize } from "@/hooks/useElementSize";
-import type { DrugId, GamePhase, Pin } from "@/types/game";
+import type { GamePhase, LanePins, Pin } from "@/types/game";
 import { PinLabel } from "./PinLabel";
 
 interface PinLabelsOverlayProps {
   phase: GamePhase;
-  outcomeDrug: DrugId | null;
+  lane: LanePins;
   interactive: boolean;
   pinName: (pin: Pin) => string;
   onPinSelect: (pin: Pin) => void;
 }
 
-export function PinLabelsOverlay({ phase, outcomeDrug, interactive, pinName, onPinSelect }: PinLabelsOverlayProps) {
+export function PinLabelsOverlay({ phase, lane, interactive, pinName, onPinSelect }: PinLabelsOverlayProps) {
   const [ref, { width, height }] = useElementSize<HTMLDivElement>();
   const project = useMemo(() => (width && height ? createProjector(width, height) : null), [width, height]);
 
@@ -33,8 +32,9 @@ export function PinLabelsOverlay({ phase, outcomeDrug, interactive, pinName, onP
           // Front-row chips hang below the pin base; rear-row chips sit above the head.
           const front = pin.row === "front";
           const label = front ? project(x, 0, z + 0.12) : project(x, PIN_HEIGHT + 0.03, z);
-          const falls = outcomeDrug !== null && pinStatus(outcomeDrug, pin.number) === "down";
-          const fallen = phase === "result" && falls;
+          const falls = lane[pin.number] === "down";
+          // No tag for a pin that has gone: knocked down this throw, or cleared after round 1.
+          const fallen = (phase === "result" && falls) || lane[pin.number] === "cleared";
 
           const fading = phase === "rolling" && falls;
           return (

@@ -8,7 +8,7 @@ import { createProjector } from "@/lib/projection";
 import { DRUGS } from "@/data/gameData";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useWebGLSupport } from "@/hooks/useWebGLSupport";
-import type { DrugId, GamePhase, Pin, RollResult } from "@/types/game";
+import type { DrugId, GamePhase, LanePins, Pin, RollResult } from "@/types/game";
 import { BallLabels } from "./BallLabels";
 import type { BowlingSceneProps } from "./BowlingScene";
 import { LaneFallback2D } from "./LaneFallback2D";
@@ -38,7 +38,7 @@ class SceneErrorBoundary extends Component<{ onError: () => void; children: Reac
 
 const COUNTER_STYLE: Record<DrugId, string> = {
   azithromycin: "bg-brand-red text-white",
-  clarithromycin: "bg-brand-navy text-white",
+  amoxclav: "bg-brand-navy text-white",
   nafithromycin: "bg-brand-gold text-brand-navy",
 };
 
@@ -50,6 +50,8 @@ interface GameStageProps {
   interactive: boolean;
   pinName: (pin: Pin) => string;
   onPinSelect: (pin: Pin) => void;
+  /** Every pin's state right now (see laneBefore / rollLane). */
+  lane: LanePins;
   /** Start the roll (swipe gesture or keyboard). Omit to disable rolling. */
   onRoll?: () => void;
   /** Classes for the lane itself (size / aspect). */
@@ -72,6 +74,7 @@ export function GameStage({
   interactive,
   pinName,
   onPinSelect,
+  lane,
   onRoll,
   className = "",
   wrapperClassName = "",
@@ -104,12 +107,11 @@ export function GameStage({
   const handleReady = useCallback(() => setSceneReady(true), []);
 
   const use3D = !force2D && webgl === true && !sceneFailed;
-  const outcomeDrug = phase === "rolling" || phase === "result" ? selectedDrug : null;
 
   const sceneProps: BowlingSceneProps = {
     phase,
     ballDrug: selectedDrug,
-    outcomeDrug,
+    lane,
     rollStartedAt,
     interactive,
     onPinSelect,
@@ -127,7 +129,7 @@ export function GameStage({
     >
       {/* 2D lane: the no-WebGL fallback, and the placeholder while 3D loads. */}
       {(!use3D || !sceneReady) && (
-        <LaneFallback2D phase={phase} ballDrug={selectedDrug} outcomeDrug={outcomeDrug} rollStartedAt={rollStartedAt} />
+        <LaneFallback2D phase={phase} ballDrug={selectedDrug} lane={lane} rollStartedAt={rollStartedAt} />
       )}
       {use3D && (
         <SceneErrorBoundary onError={handleFail}>
@@ -140,7 +142,7 @@ export function GameStage({
       {showLabels && (
         <PinLabelsOverlay
           phase={phase}
-          outcomeDrug={outcomeDrug}
+          lane={lane}
           interactive={interactive}
           pinName={pinName}
           onPinSelect={onPinSelect}

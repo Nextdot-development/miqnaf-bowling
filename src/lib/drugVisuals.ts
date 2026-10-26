@@ -3,7 +3,7 @@ import type { DrugId } from "@/types/game";
 
 export const BALL_COLORS: Readonly<Record<DrugId, string>> = {
   azithromycin: BRAND.red,
-  clarithromycin: BRAND.navy,
+  amoxclav: BRAND.navy,
   nafithromycin: BRAND.gold,
 };
 

@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { DRUG_ORDER } from "@/data/gameData";
 import { CAMERA, FRONT_ROW_Z, introBallX, verticalFovFor } from "@/lib/laneLayout";
 import { BALL_COLORS } from "@/lib/drugVisuals";
-import type { DrugId, GamePhase, Pin } from "@/types/game";
+import type { DrugId, GamePhase, LanePins, Pin } from "@/types/game";
 import { BowlingBall } from "./BowlingBall";
 import { BowlingLane } from "./BowlingLane";
 import { PinDeck } from "./PinDeck";
@@ -17,8 +17,8 @@ export interface BowlingSceneProps {
   phase: GamePhase;
   /** Selected drug: sets the ball colour. */
   ballDrug: DrugId | null;
-  /** Drug whose outcome the pins are showing. */
-  outcomeDrug: DrugId | null;
+  /** Every pin's state for this throw (up, down, wobble, or cleared after round 1). */
+  lane: LanePins;
   rollStartedAt: number | null;
   interactive: boolean;
   onPinSelect: (pin: Pin) => void;
@@ -131,7 +131,7 @@ function Lights() {
 }
 
 export default function BowlingScene(props: BowlingSceneProps) {
-  const { phase, ballDrug, outcomeDrug, rollStartedAt, interactive, onPinSelect, onContextLost, onReady, aimRef, aiming } =
+  const { phase, ballDrug, lane, rollStartedAt, interactive, onPinSelect, onContextLost, onReady, aimRef, aiming } =
     props;
 
   const timeline = useRef<SceneTimeline>({ phase, rollStartedAt, aim: aimRef });
@@ -152,13 +152,12 @@ export default function BowlingScene(props: BowlingSceneProps) {
         }}
       >
         <CameraRig />
-        <Invalidator deps={[phase, ballDrug, outcomeDrug, rollStartedAt, aiming]} />
+        <Invalidator deps={[phase, ballDrug, lane, rollStartedAt, aiming]} />
         <ContextLossWatcher onLost={onContextLost} />
         <Lights />
         <BowlingLane />
         <PinDeck
-          phase={phase}
-          outcomeDrug={outcomeDrug}
+          lane={lane}
           interactive={interactive}
           onPinSelect={onPinSelect}
         />

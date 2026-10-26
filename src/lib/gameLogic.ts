@@ -1,5 +1,5 @@
 import { DRUGS, PINS } from "@/data/gameData";
-import type { DrugId, Pin, PinNumber, PinStatus, RichText } from "@/types/game";
+import type { DrugId, LanePin, LanePins, Pin, PinNumber, PinStatus, RichText, Round } from "@/types/game";
 
 export const TOTAL_PINS = PINS.length;
 
@@ -17,8 +17,13 @@ export function downPins(drug: DrugId): PinNumber[] {
   return PINS.filter((p) => p.outcome[drug] === "down").map((p) => p.number);
 }
 
+/** Pins still up after the roll, including any that only wobbled. */
 export function standingPins(drug: DrugId): PinNumber[] {
-  return PINS.filter((p) => p.outcome[drug] === "standing").map((p) => p.number);
+  return PINS.filter((p) => p.outcome[drug] !== "down").map((p) => p.number);
+}
+
+export function wobbles(drug: DrugId, n: PinNumber): boolean {
+  return pinStatus(drug, n) === "wobble";
 }
 
 export function pinsDownCount(drug: DrugId): number {
@@ -37,4 +42,38 @@ export function richToPlain(text: RichText): string {
 export function joinPinNumbers(nums: readonly number[]): string {
   if (nums.length <= 1) return nums.join("");
   return `${nums.slice(0, -1).join(", ")} and ${nums[nums.length - 1]}`;
+}
+
+/** Whether a pin's short tag adds anything next to its full wording ("Monotherapy" does not). */
+export function hasDistinctLabel(pin: Pin): boolean {
+  return pin.label !== richToPlain(pin.name);
+}
+
+/** The lane before a throw: pins cleared after round 1 are gone, the rest are up. */
+export function laneBefore(cleared: readonly PinNumber[]): LanePins {
+  return Object.fromEntries(PINS.map((p) => [p.number, cleared.includes(p.number) ? "cleared" : "up"])) as Record<PinNumber, LanePin>;
+}
+
+/**
+ * Every pin's state after throwing `drug`. Pins cleared after round 1 stay
+ * cleared. In round 2 a pin this ball would only half-knock goes over (so
+ * amox/clav after azithromycin takes Bactericidal actions down too).
+ */
+export function rollLane(drug: DrugId, round: Round, cleared: readonly PinNumber[]): LanePins {
+  return Object.fromEntries(
+    PINS.map((p) => {
+      if (cleared.includes(p.number)) return [p.number, "cleared"];
+      const status = p.outcome[drug];
+      if (status === "down" || (status === "wobble" && round === 2)) return [p.number, "down"];
+      return [p.number, status === "wobble" ? "wobble" : "up"];
+    }),
+  ) as Record<PinNumber, LanePin>;
+}
+
+export function laneDown(lane: LanePins): PinNumber[] {
+  return PINS.filter((p) => lane[p.number] === "down" || lane[p.number] === "cleared").map((p) => p.number);
+}
+
+export function laneStanding(lane: LanePins): PinNumber[] {
+  return PINS.filter((p) => lane[p.number] === "up" || lane[p.number] === "wobble").map((p) => p.number);
 }

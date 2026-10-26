@@ -1,10 +1,6 @@
-/** Shared types for the CABP Bowling Game. */
-
-export type DrugId = "azithromycin" | "clarithromycin" | "nafithromycin";
-
+export type DrugId = "azithromycin" | "amoxclav" | "nafithromycin";
 export type PinNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-
-export type PinStatus = "down" | "standing";
+export type PinStatus = "down" | "standing" | "wobble";
 
 export type RichSegment = string | { em: string };
 export type RichText = readonly RichSegment[];
@@ -20,21 +16,24 @@ export interface Pin {
   number: PinNumber;
   label: string;
   row: "front" | "rear";
-  organism: RichText;
+  /** Full pin wording (shown in the pin list, cards and pop-ups). */
+  name: RichText;
   /** Supplied resistance mechanism, only where the brief provides one. */
   mechanism: RichText | null;
   /** Supplied reason shown when the pin is left standing. */
   standingReason: RichText | null;
-  /** Supplied basis line, shown verbatim. */
-  basis: string;
-  /**
-   * "Why it matters in CABP" copy. Null until approved copy is supplied;
-   * the UI then shows a "pending scientific review" placeholder.
-   */
+  /** Supplied basis line, shown verbatim; null where none is supplied. */
+  basis: string | null;
   whyItMatters: string | null;
   /** Down / standing per drug. The only outcome matrix in the codebase. */
   outcome: Readonly<Record<DrugId, PinStatus>>;
 }
+
+export type LanePin = "up" | "down" | "wobble" | "cleared";
+export type LanePins = Readonly<Record<PinNumber, LanePin>>;
+
+/** Each player gets up to two throws: round 1, then round 2 with the pins left. */
+export type Round = 1 | 2;
 
 export type PromptId = "A" | "B" | "C" | "D";
 
@@ -47,13 +46,18 @@ export interface DiscussionPrompt {
 export interface RollResult {
   rollId: number;
   drug: DrugId;
+  round: Round;
+  /** Every pin's state after this throw. */
+  lane: LanePins;
+  /** Pins down in total, including any cleared after round 1. */
   pinsDown: number;
   totalPins: number;
+  /** Pins still up (including any that only wobbled). */
   standing: PinNumber[];
   promptId: PromptId | null;
 }
 
-/** Top-level game phase. The pathogen card is an overlay on top. */
+/** Top-level game phase. The pin card is an overlay on top. */
 export type GamePhase = "intro" | "selecting" | "rolling" | "result";
 
 export interface GameState {
@@ -69,6 +73,9 @@ export interface GameState {
   /** True when the current roll skips animation (reduced motion). */
   rollInstant: boolean;
   result: RollResult | null;
+  round: Round;
+  /** Pins knocked down in round 1, cleared from the lane for round 2. */
+  cleared: PinNumber[];
   usedPrompts: PromptId[];
   soundOn: boolean;
   openPin: PinNumber | null;

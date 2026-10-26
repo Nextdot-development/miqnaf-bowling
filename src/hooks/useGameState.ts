@@ -35,6 +35,7 @@ export function useGameState(reducedMotion: boolean) {
       newSession: () => dispatch({ type: "NEW_SESSION" }),
       selectDrug: (drug: DrugId) => dispatch({ type: "SELECT_DRUG", drug }),
       chooseAnother: () => dispatch({ type: "CHOOSE_ANOTHER" }),
+      nextRound: () => dispatch({ type: "NEXT_ROUND" }),
       openPin: (pin: PinNumber) => dispatch({ type: "OPEN_PIN", pin }),
       closePin: () => dispatch({ type: "CLOSE_PIN" }),
     }),

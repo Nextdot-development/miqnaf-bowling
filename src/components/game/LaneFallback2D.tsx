@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { DRUG_ORDER, PINS } from "@/data/gameData";
 import { SCENE } from "@/lib/brand";
 import { BALL_COLORS, ballColor } from "@/lib/drugVisuals";
-import { pinStatus } from "@/lib/gameLogic";
 import {
   ARROWS_Z,
   BALL_RADIUS,
@@ -51,12 +50,12 @@ function BallGlyph({ gradientId }: { gradientId: string }) {
   );
 }
 
-type FallbackProps = Pick<BowlingSceneProps, "phase" | "ballDrug" | "outcomeDrug" | "rollStartedAt">;
+type FallbackProps = Pick<BowlingSceneProps, "phase" | "ballDrug" | "lane" | "rollStartedAt">;
 
 export function LaneFallback2D({
   phase,
   ballDrug,
-  outcomeDrug,
+  lane,
   rollStartedAt,
 }: FallbackProps) {
   const [ref, { width, height }] = useElementSize<HTMLDivElement>();
@@ -65,9 +64,7 @@ export function LaneFallback2D({
 
   const project = useMemo(() => (width && height ? createProjector(width, height) : null), [width, height]);
 
-  const showingOutcome = (phase === "rolling" || phase === "result") && outcomeDrug !== null;
-  const falls = (n: (typeof PINS)[number]["number"]) =>
-    showingOutcome && pinStatus(outcomeDrug, n) === "down";
+  const falls = (n: (typeof PINS)[number]["number"]) => lane[n] === "down";
 
   // Frame loop: writes SVG attributes directly, no React renders per frame.
   useEffect(() => {
@@ -93,13 +90,15 @@ export function LaneFallback2D({
         const g = pinRefs.current[i];
         if (!g) return;
         const { x, z } = pinPosition(pin.number);
-        const pose = pinPose(pin.number, falls(pin.number), elapsed);
+        const wobble = lane[pin.number] === "wobble";
+        const pose = pinPose(pin.number, falls(pin.number), elapsed, wobble);
         const base = project(x + pose.dx, 0, z + pose.dz);
         const dir = fallDirection(pin.number);
         const rot = (pose.angle * 180) / Math.PI * (pose.dim > 0 || !falls(pin.number) ? 1 : dir.x);
         const squash = 1 - 0.7 * Math.sin(pose.angle) * Math.abs(dir.z) * (falls(pin.number) ? 1 : 0);
         g.setAttribute("transform", `translate(${base.x} ${base.y}) rotate(${rot.toFixed(2)}) scale(1 ${squash.toFixed(3)})`);
-        g.style.opacity = String(pose.opacity);
+        // Cleared after round 1: gone from the lane.
+        g.style.opacity = lane[pin.number] === "cleared" ? "0" : String(pose.opacity);
         g.style.filter = pose.dim > 0 ? `grayscale(1) brightness(${1 - 0.22 * pose.dim})` : "";
       });
 
@@ -108,7 +107,7 @@ export function LaneFallback2D({
     draw();
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project, phase, rollStartedAt, outcomeDrug, ballDrug]);
+  }, [project, phase, rollStartedAt, lane, ballDrug]);
 
   const color = ballColor(ballDrug);
 

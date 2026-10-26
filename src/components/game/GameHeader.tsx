@@ -42,7 +42,7 @@ export function GameHeader({
             aria-label="New game"
           >
             <RotateCcw className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-            <span className="hidden sm:inline">New game</span>
+            <span className="hidden lg:inline">New game</span>
           </button>
         </div>
       </div>

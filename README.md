@@ -1,6 +1,6 @@
-# Nafithromycin CABP Bowling Game
+# CABP Bowling Challenge
 
-An interactive teaching model for scientific discussion among healthcare professionals at a medical conference. A participant picks one of three balls (azithromycin, clarithromycin, nafithromycin) and rolls it at eight pathogen pins on a 3D lane. The pins that fall come from a fixed, supplied outcome matrix. Then they see whether all the pins fell, and can open a card for each pathogen pin.
+An interactive teaching model for scientific discussion among healthcare professionals at a medical conference. A participant picks one of three balls (azithromycin, amox/clav, nafithromycin) and rolls it at eight pins on a 3D lane, each pin an attribute a CABP treatment should cover (MDR S. pneumoniae coverage, atypical coverage, safety, lung levels and so on). The pins that fall come from a fixed, supplied outcome matrix. Then they see whether all the pins fell, and can open a card for each pin.
 
 > **Draft scientific content.** Read [SCIENTIFIC_REVIEW.md](SCIENTIFIC_REVIEW.md) before any release.
 
@@ -47,7 +47,7 @@ This plays the full flow in a headless browser, saves screenshots of each state 
 
 **Discussion prompts:** `src/lib/promptLogic.ts` chooses at most one prompt per result. It uses the drug's own prompt first, then the 3-day-course prompt once all three balls have been rolled. It never repeats a prompt within a session, and shows nothing rather than repeat. Prompts are currently not shown on screen; the wording is kept in `src/data/prompts.ts`.
 
-**Reveal rules:** pathogen cards show no per-ball outcomes; a ball's outcome is shown only on the lane, after it is rolled.
+**Reveal rules:** pin cards show no per-ball outcomes; a ball's outcome is shown only on the lane, after it is rolled.
 
 ### Project layout
 
@@ -96,4 +96,4 @@ src/
 - animation: the same path and timing for every drug, the expected end poses, and a bounded swipe offset that is gone shortly after release
 - swipe gestures: an upward swipe rolls; a tap, short drag, sideways or downward swipe does not
 - sound score: one knock per falling pin as it starts to fall and a thud as it lands, rattles only for standing pins, and the same ball timing for every drug
-- the UI (jsdom, which runs the 2D fallback): disclaimer present on every screen, sound on by default and switchable off, the full roll flow, reduced motion, keyboard use, the pathogen card, the win and try-again pop-ups
+- the UI (jsdom, which runs the 2D fallback): disclaimer present on every screen, sound on by default and switchable off, the full roll flow, reduced motion, keyboard use, the pin card, the win and try-again pop-ups

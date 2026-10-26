@@ -4,26 +4,28 @@ import type { CSSProperties } from "react";
 import { DRUG_ORDER, DRUGS } from "@/data/gameData";
 import { BALL_COLORS } from "@/lib/drugVisuals";
 import { pinsDownCount, TOTAL_PINS } from "@/lib/gameLogic";
-import type { DrugId, GamePhase } from "@/types/game";
+import type { DrugId, GamePhase, Round } from "@/types/game";
 
 interface BallRackProps {
   phase: GamePhase;
   selectedDrug: DrugId | null;
   rolledDrugs: readonly DrugId[];
+  /** Round 2 offers only the two balls not used in round 1. */
+  round: Round;
   onSelect: (drug: DrugId) => void;
   className?: string;
 }
 
-export function BallRack({ phase, selectedDrug, rolledDrugs, onSelect, className = "" }: BallRackProps) {
+export function BallRack({ phase, selectedDrug, rolledDrugs, round, onSelect, className = "" }: BallRackProps) {
   if (phase !== "selecting") return null;
 
   return (
     <section aria-labelledby="ball-rack-heading" className={className}>
       <h2 id="ball-rack-heading" className="eyebrow mb-3 text-white/80 kiosk:text-base">
-        Choose a ball
+        {round === 2 ? "Round 2 · Choose a ball" : "Choose a ball"}
       </h2>
       <ul className="grid grid-cols-3 gap-2 sm:gap-4 kiosk:grid-cols-1 kiosk:gap-[1.25rem]" role="list">
-        {DRUG_ORDER.map((id) => {
+        {DRUG_ORDER.filter((id) => round === 1 || !rolledDrugs.includes(id)).map((id) => {
           const drug = DRUGS[id];
           const selected = id === selectedDrug;
           const badge = selected

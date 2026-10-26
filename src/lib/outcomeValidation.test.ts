@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DRUG_ORDER, DRUGS, PINS, DISCLAIMER, FOOTER_NOTE } from "@/data/gameData";
-import { downPins, pinsDownCount, standingPins } from "@/lib/gameLogic";
+import { downPins, pinsDownCount, richToPlain, standingPins, wobbles } from "@/lib/gameLogic";
 import { EXPECTED_LABELS, validateOutcomeMatrix } from "@/lib/outcomeValidation";
 
 describe("outcome matrix", () => {
@@ -14,7 +14,7 @@ describe("outcome matrix", () => {
     expect(PINS.map((p) => p.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
 
-  it("uses the supplied labels", () => {
+  it("uses the agreed short labels", () => {
     for (const pin of PINS) expect(pin.label).toBe(EXPECTED_LABELS[pin.number]);
   });
 
@@ -24,8 +24,8 @@ describe("outcome matrix", () => {
   });
 
   it.each([
-    ["azithromycin", 5, [2, 3, 4]],
-    ["clarithromycin", 5, [2, 3, 4]],
+    ["azithromycin", 4, [1, 5, 6, 8]],
+    ["amoxclav", 1, [1, 2, 4, 5, 6, 7, 8]],
     ["nafithromycin", 8, []],
   ] as const)("%s knocks down %i of 8 and leaves %j standing", (drug, down, standing) => {
     expect(pinsDownCount(drug)).toBe(down);
@@ -33,16 +33,21 @@ describe("outcome matrix", () => {
     expect(downPins(drug).length + standingPins(drug).length).toBe(8);
   });
 
-  it("matches the supplied table cell by cell", () => {
+  it("only amox/clav half-knocks a pin, and only Bactericidal actions", () => {
+    const half = PINS.flatMap((p) => DRUG_ORDER.filter((d) => wobbles(d, p.number)).map((d) => `${d}:${p.number}`));
+    expect(half).toEqual(["amoxclav:5"]);
+  });
+
+  it("matches the supplied list cell by cell (azithromycin, amox/clav, nafithromycin)", () => {
     const table: Record<number, [string, string, string]> = {
-      1: ["down", "down", "down"],
-      2: ["standing", "standing", "down"],
-      3: ["standing", "standing", "down"],
-      4: ["standing", "standing", "down"],
-      5: ["down", "down", "down"],
-      6: ["down", "down", "down"],
-      7: ["down", "down", "down"],
-      8: ["down", "down", "down"],
+      1: ["standing", "standing", "down"], // MDR S. pneumoniae coverage
+      2: ["down", "standing", "down"], // Atypical coverage
+      3: ["down", "down", "down"], // Safety for paediatric and elderly
+      4: ["down", "standing", "down"], // High lung levels
+      5: ["standing", "wobble", "down"], // Bactericidal actions: amox/clav "50% down", rocks but stays up
+      6: ["standing", "standing", "down"], // PK/PD supporting short course therapy
+      7: ["down", "standing", "down"], // Anti-inflammatory activity
+      8: ["standing", "standing", "down"], // Monotherapy
     };
     for (const pin of PINS) {
       expect(DRUG_ORDER.map((d) => pin.outcome[d])).toEqual(table[pin.number]);
@@ -56,10 +61,7 @@ describe("supplied copy", () => {
       drugClass: "Azalide macrolide",
       description: "Macrolide approved in 1988. Resistance in pneumococci is high in several regions.",
     });
-    expect(DRUGS.clarithromycin).toMatchObject({
-      drugClass: "Macrolide",
-      description: "Macrolide approved in 1991. Shares azithromycin's resistance mechanisms.",
-    });
+    expect(DRUGS.amoxclav).toMatchObject({ name: "Amox/clav", drugClass: "β-lactam/β-lactamase inhibitor" });
     expect(DRUGS.nafithromycin).toMatchObject({
       drugClass: "Lactone ketolide",
       description: "Designed for macrolide-resistant pneumococci. 3-day, once-daily course.",
@@ -75,9 +77,16 @@ describe("supplied copy", () => {
     );
   });
 
-  it("gives every standing pin a supplied reason", () => {
-    for (const n of standingPins("azithromycin")) {
-      expect(PINS.find((p) => p.number === n)?.standingReason).not.toBeNull();
-    }
+  it("uses the supplied pin wording", () => {
+    expect(PINS.map((p) => richToPlain(p.name))).toEqual([
+      "MDR S. pneumoniae coverage",
+      "Atypical coverage",
+      "Safety for paediatric and elderly",
+      "High lung levels",
+      "Bactericidal actions",
+      "PK/PD supporting short course therapy",
+      "Anti-inflammatory activity",
+      "Monotherapy",
+    ]);
   });
 });

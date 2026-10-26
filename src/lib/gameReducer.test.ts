@@ -41,14 +41,14 @@ describe("game reducer", () => {
 
   it("produces results from the outcome matrix", () => {
     const azi = rollDrug(started, "azithromycin");
-    expect(azi.result).toMatchObject({ drug: "azithromycin", pinsDown: 5, totalPins: 8, standing: [2, 3, 4], promptId: "B" });
+    expect(azi.result).toMatchObject({ drug: "azithromycin", pinsDown: 4, totalPins: 8, standing: [1, 5, 6, 8], promptId: "B" });
     const naf = rollDrug(azi, "nafithromycin");
     expect(naf.result).toMatchObject({ pinsDown: 8, standing: [], promptId: "A" });
   });
 
   it("selecting another ball resets the lane and result but keeps history", () => {
     const azi = rollDrug(started, "azithromycin");
-    const next = gameReducer(azi, { type: "SELECT_DRUG", drug: "clarithromycin" });
+    const next = gameReducer(azi, { type: "SELECT_DRUG", drug: "amoxclav" });
     expect(next.phase).toBe("selecting");
     expect(next.result).toBeNull();
     expect(next.rollStartedAt).toBeNull();
@@ -58,7 +58,7 @@ describe("game reducer", () => {
 
   it("never repeats a prompt within a session", () => {
     let s = rollDrug(started, "azithromycin"); // B
-    s = rollDrug(s, "clarithromycin"); // B used, not all rolled -> none
+    s = rollDrug(s, "amoxclav"); // B used, not all rolled -> none
     expect(s.result?.promptId).toBeNull();
     s = rollDrug(s, "nafithromycin"); // A is still unused
     expect(s.result?.promptId).toBe("A");
@@ -69,17 +69,17 @@ describe("game reducer", () => {
     expect(new Set(s.usedPrompts).size).toBe(s.usedPrompts.length);
   });
 
-  it("matches the mock-up order: azithromycin, nafithromycin, clarithromycin -> D", () => {
+  it("matches the mock-up order: azithromycin, nafithromycin, amoxclav -> D", () => {
     let s = rollDrug(started, "azithromycin");
     s = rollDrug(s, "nafithromycin");
-    s = rollDrug(s, "clarithromycin");
+    s = rollDrug(s, "amoxclav");
     expect(s.result?.promptId).toBe("D");
   });
 
   it("reduced-motion rolls resolve immediately with the same outcome", () => {
-    const s = run([{ type: "SELECT_DRUG", drug: "clarithromycin" }, { type: "ROLL", at: 0, instant: true }], started);
+    const s = run([{ type: "SELECT_DRUG", drug: "amoxclav" }, { type: "ROLL", at: 0, instant: true }], started);
     expect(s.phase).toBe("result");
-    expect(s.result).toMatchObject({ pinsDown: 5, standing: [2, 3, 4] });
+    expect(s.result).toMatchObject({ pinsDown: 1, standing: [1, 2, 4, 5, 6, 7, 8] });
   });
 
   it("only NEW_SESSION clears session history, and it turns sound back on", () => {
@@ -96,12 +96,56 @@ describe("game reducer", () => {
     const first = s.rollId;
     s = gameReducer(s, { type: "NEW_SESSION" });
     s = gameReducer(s, { type: "START_SESSION" });
-    s = rollDrug(s, "clarithromycin");
+    s = rollDrug(s, "amoxclav");
     expect(s.rollId).toBeGreaterThan(first);
   });
 
   it("does not open pin cards mid-roll", () => {
     const rolling = run([{ type: "SELECT_DRUG", drug: "azithromycin" }, { type: "ROLL", at: 0, instant: false }], started);
     expect(gameReducer(rolling, { type: "OPEN_PIN", pin: 2 }).openPin).toBeNull();
+  });
+});
+
+describe('two rounds', () => {
+  const round2 = (first: DrugId, second: DrugId) => {
+    let s = rollDrug(started, first);
+    s = gameReducer(s, { type: 'NEXT_ROUND' });
+    return rollDrug(s, second);
+  };
+
+  it.each([
+    // [round 1 ball, round 2 ball, pins down in total, pins still up]
+    ['azithromycin', 'amoxclav', 5, [1, 6, 8]], // amox/clav adds Bactericidal actions
+    ['azithromycin', 'nafithromycin', 8, []],
+    ['amoxclav', 'azithromycin', 4, [1, 5, 6, 8]],
+    ['amoxclav', 'nafithromycin', 8, []],
+  ] as const)('%s then %s: %i of 8 down', (first, second, down, standing) => {
+    const s = round2(first, second);
+    expect(s.result).toMatchObject({ round: 2, pinsDown: down, standing });
+  });
+
+  it('clears the round 1 pins for round 2 and keeps them cleared', () => {
+    let s = rollDrug(started, 'azithromycin');
+    s = gameReducer(s, { type: 'NEXT_ROUND' });
+    expect(s).toMatchObject({ phase: 'selecting', round: 2, cleared: [2, 3, 4, 7], selectedDrug: null });
+    s = rollDrug(s, 'amoxclav');
+    expect([2, 3, 4, 7].map((n) => s.result!.lane[n as 2])).toEqual(['cleared', 'cleared', 'cleared', 'cleared']);
+  });
+
+  it('does not offer the round 1 ball again', () => {
+    let s = rollDrug(started, 'amoxclav');
+    s = gameReducer(s, { type: 'NEXT_ROUND' });
+    expect(gameReducer(s, { type: 'SELECT_DRUG', drug: 'amoxclav' }).selectedDrug).toBeNull();
+    expect(gameReducer(s, { type: 'SELECT_DRUG', drug: 'nafithromycin' }).selectedDrug).toBe('nafithromycin');
+  });
+
+  it('has no round 2 after a strike, and none after round 2', () => {
+    expect(gameReducer(rollDrug(started, 'nafithromycin'), { type: 'NEXT_ROUND' }).round).toBe(1);
+    expect(gameReducer(round2('azithromycin', 'amoxclav'), { type: 'NEXT_ROUND' }).phase).toBe('result');
+  });
+
+  it('a new game starts again at round 1 with every pin up', () => {
+    const s = gameReducer(round2('azithromycin', 'amoxclav'), { type: 'NEW_SESSION' });
+    expect(s).toMatchObject({ round: 1, cleared: [], rolledDrugs: [] });
   });
 });

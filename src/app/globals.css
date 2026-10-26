@@ -115,6 +115,14 @@
   .lane-compact .pin-chip-text {
     display: none;
   }
+  @media (max-width: 420px) {
+    .lane-compact .pin-chip {
+      @apply p-0.5;
+    }
+    .lane-compact .pin-chip-num {
+      @apply h-[1.15rem] min-w-[1.15rem] text-[0.68rem];
+    }
+  }
 
   .ball-swatch {
     @apply relative inline-block shrink-0 rounded-full;

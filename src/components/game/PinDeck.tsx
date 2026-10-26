@@ -2,20 +2,18 @@
 
 import { useEffect, useMemo } from "react";
 import { PINS } from "@/data/gameData";
-import { pinStatus } from "@/lib/gameLogic";
-import type { DrugId, GamePhase, Pin } from "@/types/game";
+import type { LanePins, Pin } from "@/types/game";
 import { PathogenPin } from "./PathogenPin";
 import { createPinGeometry, createPinTexture } from "./sceneAssets";
 
 interface PinDeckProps {
-  phase: GamePhase;
-  
-  outcomeDrug: DrugId | null;
+  /** Every pin's state for this throw; cleared pins are not drawn. */
+  lane: LanePins;
   interactive: boolean;
   onPinSelect: (pin: Pin) => void;
 }
 
-export function PinDeck({ phase, outcomeDrug, interactive, onPinSelect }: PinDeckProps) {
+export function PinDeck({ lane, interactive, onPinSelect }: PinDeckProps) {
   const geometry = useMemo(() => createPinGeometry(), []);
   const skin = useMemo(() => createPinTexture(), []);
 
@@ -27,19 +25,20 @@ export function PinDeck({ phase, outcomeDrug, interactive, onPinSelect }: PinDec
     [geometry, skin],
   );
 
-  const showingOutcome = (phase === "rolling" || phase === "result") && outcomeDrug !== null;
-
   return (
     <group>
       {PINS.map((pin) => {
-        const falls = showingOutcome && pinStatus(outcomeDrug, pin.number) === "down";
+        const status = lane[pin.number];
+        // Knocked down in round 1: cleared from the lane for round 2.
+        if (status === "cleared") return null;
         return (
           <PathogenPin
             key={pin.number}
             pin={pin}
             geometry={geometry}
             skin={skin}
-            falls={falls}
+            falls={status === "down"}
+            wobbles={status === "wobble"}
             interactive={interactive}
             onSelect={onPinSelect}
           />

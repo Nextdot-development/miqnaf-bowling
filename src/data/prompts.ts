@@ -8,7 +8,7 @@ export const PROMPTS: Readonly<Record<PromptId, DiscussionPrompt>> = {
   },
   B: {
     id: "B",
-    trigger: "Azithromycin or clarithromycin rolled",
+    trigger: "Azithromycin or amox/clav rolled",
     text: "Pins 2, 3 and 4 are still standing. How often do you meet macrolide-resistant pneumococci, and how does that shape your first choice?",
   },
   C: {

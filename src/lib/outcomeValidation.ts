@@ -3,19 +3,19 @@ import { pinsDownCount, standingPins } from "@/lib/gameLogic";
 import type { DrugId, PinNumber } from "@/types/game";
 
 export const EXPECTED_LABELS: Readonly<Record<PinNumber, string>> = {
-  1: "Spn",
-  2: "Spn-mef",
-  3: "Spn-erm",
-  4: "Spy-erm",
-  5: "Mc",
-  6: "Mp",
-  7: "Cp",
-  8: "Lp",
+  1: "MDR Spn",
+  2: "Atypicals",
+  3: "Safety",
+  4: "Lung levels",
+  5: "Bactericidal",
+  6: "Short course",
+  7: "Anti-inflam.",
+  8: "Monotherapy",
 };
 
 export const EXPECTED_RESULTS: Readonly<Record<DrugId, { down: number; standing: PinNumber[] }>> = {
-  azithromycin: { down: 5, standing: [2, 3, 4] },
-  clarithromycin: { down: 5, standing: [2, 3, 4] },
+  azithromycin: { down: 4, standing: [1, 5, 6, 8] },
+  amoxclav: { down: 1, standing: [1, 2, 4, 5, 6, 7, 8] },
   nafithromycin: { down: 8, standing: [] },
 };
 

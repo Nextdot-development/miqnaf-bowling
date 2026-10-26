@@ -18,8 +18,8 @@ export function SoundToggle({ on, onChange }: SoundToggleProps) {
       className="inline-flex items-center gap-3 rounded-full border border-line bg-surface py-1.5 pl-3 pr-1.5 font-semibold text-brand-navy shadow-sm transition-colors hover:border-brand-navy/40"
     >
       {on ? <Volume2 className="h-5 w-5" aria-hidden /> : <VolumeX className="h-5 w-5 text-ink-soft" aria-hidden />}
-      <span className="hidden sm:inline">Sound {on ? "on" : "off"}</span>
-      <span className="sr-only sm:hidden">Sound</span>
+      <span className="hidden lg:inline">Sound {on ? "on" : "off"}</span>
+      <span className="sr-only lg:hidden">Sound</span>
       <span
         aria-hidden
         className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${

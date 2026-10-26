@@ -1,17 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DRUGS, PRE_ROLL_QUESTION } from "@/data/gameData";
+import { DRUGS, PRE_ROLL_QUESTION, ROUND_ONE_FEEDBACK, ROUND_TWO_MESSAGE, STRIKE, type FirstMissDrug } from "@/data/gameData";
 import { useGameState } from "@/hooks/useGameState";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { joinPinNumbers, pinStatus, richToPlain } from "@/lib/gameLogic";
+import { joinPinNumbers, laneBefore, rollLane, richToPlain } from "@/lib/gameLogic";
 import { validateOutcomeMatrix } from "@/lib/outcomeValidation";
 import { END_POPUP_DELAY_MS } from "@/lib/timing";
-import type { Pin } from "@/types/game";
+import type { LanePin, Pin } from "@/types/game";
 import { Dialog } from "@/components/ui/Dialog";
 import { AccessiblePinList } from "./AccessiblePinList";
 import { BallRack } from "./BallRack";
-import { EndScreen } from "./EndScreen";
+import { EndScreen, type EndOutcome } from "./EndScreen";
 import { GameFooter } from "./GameFooter";
 import { GameHeader } from "./GameHeader";
 import { GameStage } from "./GameStage";
@@ -44,16 +44,23 @@ export function GameShell({ force2D = false }: GameShellProps) {
     return () => window.removeEventListener("contextmenu", block);
   }, []);
 
+  // Every pin's state right now: cleared ones are gone in round 2; during and
+  // after a throw, which fall, which wobble and which stay up.
+  const lane = useMemo(() => {
+    if (state.phase === "result" && state.result) return state.result.lane;
+    if (state.phase === "rolling" && state.selectedDrug) return rollLane(state.selectedDrug, state.round, state.cleared);
+    return laneBefore(state.cleared);
+  }, [state.phase, state.result, state.selectedDrug, state.round, state.cleared]);
+
   // Pin labels' accessible names; include the outcome once it is revealed.
-  const resultDrug = state.phase === "result" ? state.result?.drug ?? null : null;
+  const showStatus = state.phase === "result";
   const pinName = useCallback(
     (pin: Pin) => {
-      const status = resultDrug
-        ? ` ${pinStatus(resultDrug, pin.number) === "down" ? "Down" : "Standing"} after ${DRUGS[resultDrug].name}.`
-        : "";
-      return `Pin ${pin.number}, ${pin.label}: ${richToPlain(pin.organism)}.${status} Open pathogen card.`;
+      const said: Record<LanePin, string> = { up: "Standing", down: "Down", wobble: "Wobbled, still standing", cleared: "Down in round 1" };
+      const status = showStatus ? ` ${said[lane[pin.number]]}.` : "";
+      return `Pin ${pin.number}, ${pin.label}: ${richToPlain(pin.name)}.${status} Open pin card.`;
     },
-    [resultDrug],
+    [showStatus, lane],
   );
   const onPinSelect = useCallback((pin: Pin) => game.openPin(pin.number), [game]);
 
@@ -64,7 +71,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
       const standing = r.standing.length
         ? `Pins ${joinPinNumbers(r.standing)} are still standing.`
         : "No pins are standing.";
-      return `${DRUGS[r.drug].name}: ${r.pinsDown} of ${r.totalPins} pins down. ${standing}`;
+      return `Round ${r.round}, ${DRUGS[r.drug].name}: ${r.pinsDown} of ${r.totalPins} pins down. ${standing}`;
     }
     return "";
   }, [state.phase, state.selectedDrug, state.result]);
@@ -74,11 +81,21 @@ export function GameShell({ force2D = false }: GameShellProps) {
       ? "Ball roll"
       : state.phase === "result" && state.result
         ? `Result · ${DRUGS[state.result.drug].name}`
-        : "Choose your ball";
+        : `Round ${state.round} · Choose your ball`;
 
   
-  const [ending, setEnding] = useState<"won" | "lost" | null>(null);
-  const outcome = state.phase === "result" && state.result ? (state.result.standing.length > 0 ? "lost" : "won") : null;
+  // After each throw the lane shows the pins briefly, then a pop-up: STRIKE
+  // (all down), the round 1 explanation (pins left, round 2 to come), or
+  // "pins are still up" after round 2.
+  const [ending, setEnding] = useState<EndOutcome | null>(null);
+  const outcome: EndOutcome | null =
+    state.phase === "result" && state.result
+      ? state.result.standing.length === 0
+        ? "won"
+        : state.result.round === 1
+          ? "round"
+          : "lost"
+      : null;
   const overlayOpen = state.openPin !== null;
   useEffect(() => {
     if (!outcome || overlayOpen) return;
@@ -91,8 +108,27 @@ export function GameShell({ force2D = false }: GameShellProps) {
   // standing: once, as the pop-up appears (and only with sound on).
   const { playEnding } = game;
   useEffect(() => {
-    if (shownEnding) playEnding(shownEnding);
+    if (shownEnding === "won" || shownEnding === "lost") playEnding(shownEnding);
   }, [shownEnding, playEnding]);
+
+  // Wording for the pop-up, from the scenario copy.
+  const firstDrug = state.rolledDrugs[0];
+  const endCopy = useMemo(() => {
+    const r = state.result;
+    if (!r) return {};
+    if (r.standing.length === 0) {
+      return r.round === 1 || !firstDrug || firstDrug === "nafithromycin"
+        ? { message: STRIKE.firstThrow, tagline: STRIKE.tagline, evidence: STRIKE.evidence }
+        : { message: ROUND_TWO_MESSAGE[firstDrug as FirstMissDrug].nafithromycin, evidence: STRIKE.evidence };
+    }
+    if (r.round === 1) return ROUND_ONE_FEEDBACK[r.drug as FirstMissDrug];
+    return { message: firstDrug && firstDrug !== "nafithromycin" ? ROUND_TWO_MESSAGE[firstDrug as FirstMissDrug][r.drug] : undefined };
+  }, [state.result, firstDrug]);
+
+  const nextRound = useCallback(() => {
+    setEnding(null);
+    game.nextRound();
+  }, [game]);
 
   // The pre-roll question pops up once per player, when the lane first opens.
   const [questionSeen, setQuestionSeen] = useState(false);
@@ -137,22 +173,34 @@ export function GameShell({ force2D = false }: GameShellProps) {
                 interactive={state.phase === "selecting" || state.phase === "result"}
                 pinName={pinName}
                 onPinSelect={onPinSelect}
+                lane={lane}
                 onRoll={game.roll}
                 force2D={force2D}
                 className="aspect-[4/3] w-full sm:aspect-[16/9] kiosk:aspect-auto kiosk:min-h-0 kiosk:flex-1"
                 wrapperClassName="kiosk:min-h-0 kiosk:flex-1"
               />
-              <AccessiblePinList phase={state.phase} drug={state.result?.drug ?? null} />
+              <AccessiblePinList lane={lane} showOutcome={state.phase === "result"} />
+              {state.phase === "selecting" && (
+                <section
+                  aria-label="Question"
+                  className="order-first rounded-2xl bg-brand-navy px-5 py-3.5 text-center text-white kiosk:hidden"
+                >
+                  <p className="eyebrow text-brand-gold">Question</p>
+                  <p className="mt-1 text-base font-bold leading-snug sm:text-lg">{PRE_ROLL_QUESTION}</p>
+                </section>
+              )}
               <BallRack
                 phase={state.phase}
                 selectedDrug={state.selectedDrug}
                 rolledDrugs={state.rolledDrugs}
+                round={state.round}
                 onSelect={game.selectDrug}
                 className="order-first rounded-3xl bg-brand-navy p-4 kiosk:absolute kiosk:left-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(22rem,24%)] kiosk:bg-transparent kiosk:p-0"
               />
               <PinKey
                 onOpenPin={game.openPin}
                 disabled={state.phase === "rolling"}
+                cleared={state.cleared}
                 className="kiosk:absolute kiosk:right-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(24rem,25%)]"
               />
             </div>
@@ -166,7 +214,17 @@ export function GameShell({ force2D = false }: GameShellProps) {
         {announcement}
       </p>
 
-      <EndScreen outcome={shownEnding} standing={state.result?.standing} onRestart={restart} />
+      <EndScreen
+        outcome={shownEnding}
+        message={endCopy.message}
+        tagline={"tagline" in endCopy ? endCopy.tagline : undefined}
+        evidence={"evidence" in endCopy ? endCopy.evidence : null}
+        pinsDown={state.result?.pinsDown}
+        standing={state.result?.standing}
+        wobbled={state.result ? state.result.standing.filter((n) => state.result!.lane[n] === "wobble") : []}
+        onRestart={restart}
+        onNextRound={nextRound}
+      />
 
       <PathogenInfoDialog pinNumber={state.openPin} onClose={game.closePin} />
 

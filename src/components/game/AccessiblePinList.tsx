@@ -1,14 +1,17 @@
 import { PINS } from "@/data/gameData";
-import { pinStatus, richToPlain } from "@/lib/gameLogic";
-import type { DrugId, GamePhase } from "@/types/game";
+import { richToPlain } from "@/lib/gameLogic";
+import type { LanePin, LanePins } from "@/types/game";
 
 interface AccessiblePinListProps {
-  phase: GamePhase;
-  drug: DrugId | null;
+  lane: LanePins;
+  /** Say whether each pin is up or down (after a throw). */
+  showOutcome: boolean;
 }
 
-export function AccessiblePinList({ phase, drug }: AccessiblePinListProps) {
-  const showOutcome = phase === "result" && drug !== null;
+const SAID: Record<LanePin, string> = { up: "Standing", down: "Down", wobble: "Wobbled, still standing", cleared: "Down in round 1" };
+
+/** Screen-reader description of the pin deck (the visible pin tags are the controls). */
+export function AccessiblePinList({ lane, showOutcome }: AccessiblePinListProps) {
   return (
     <div className="sr-only">
       <h2>Pin deck</h2>
@@ -16,8 +19,8 @@ export function AccessiblePinList({ phase, drug }: AccessiblePinListProps) {
       <ol>
         {PINS.map((pin) => (
           <li key={pin.number}>
-            Pin {pin.number}, {pin.label}: {richToPlain(pin.organism)}
-            {showOutcome ? `. ${pinStatus(drug, pin.number) === "down" ? "Down" : "Standing"}.` : "."}
+            Pin {pin.number}, {pin.label}: {richToPlain(pin.name)}
+            {showOutcome || lane[pin.number] === "cleared" ? `. ${SAID[lane[pin.number]]}.` : "."}
           </li>
         ))}
       </ol>
