@@ -186,7 +186,6 @@ export const ROUND_ONE_FEEDBACK: Readonly<Record<FirstMissDrug, { message: strin
 
 /** Nafithromycin strike: heading, lines and the supporting evidence. */
 export const STRIKE = {
-  heading: "STRIKE!",
   firstThrow: "All 8 pins down in a single throw.",
   tagline: "One Molecule. Multiple Respiratory Challenges Addressed.",
   evidence: rich(

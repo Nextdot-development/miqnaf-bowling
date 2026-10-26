@@ -48,9 +48,9 @@ export function GameShell({ force2D = false }: GameShellProps) {
   // after a throw, which fall, which wobble and which stay up.
   const lane = useMemo(() => {
     if (state.phase === "result" && state.result) return state.result.lane;
-    if (state.phase === "rolling" && state.selectedDrug) return rollLane(state.selectedDrug, state.round, state.cleared);
+    if (state.phase === "rolling" && state.selectedDrug) return rollLane(state.selectedDrug, state.cleared);
     return laneBefore(state.cleared);
-  }, [state.phase, state.result, state.selectedDrug, state.round, state.cleared]);
+  }, [state.phase, state.result, state.selectedDrug, state.cleared]);
 
   // Pin labels' accessible names; include the outcome once it is revealed.
   const showStatus = state.phase === "result";

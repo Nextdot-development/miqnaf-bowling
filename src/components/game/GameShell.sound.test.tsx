@@ -49,7 +49,7 @@ describe("end-of-game sounds", () => {
     rollAndWaitForPopup(/^Azithromycin/);
     expect(screen.getByText("Good coverage, but some critical respiratory challenges remain.")).toBeInTheDocument();
     expect(playEnding).not.toHaveBeenCalled();
-    fireEvent.click(button(/^Round 2/));
+    fireEvent.click(button(/^Choose another ball/));
     rollAndWaitForPopup(/^Amox.clav/);
     expect(screen.getByText("Unfortunately pins are still up")).toBeInTheDocument();
     expect(playEnding).toHaveBeenCalledTimes(1);
@@ -61,7 +61,7 @@ describe("end-of-game sounds", () => {
     fireEvent.click(button(/start game/i));
     fireEvent.click(button(/^Choose a ball$/));
     rollAndWaitForPopup(/^Nafithromycin/);
-    expect(screen.getByText("STRIKE!")).toBeInTheDocument();
+    expect(screen.getByText("You have won the game")).toBeInTheDocument();
     expect(playEnding).toHaveBeenCalledTimes(1);
     expect(playEnding).toHaveBeenCalledWith("won");
   });

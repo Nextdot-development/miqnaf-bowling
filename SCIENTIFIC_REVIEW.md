@@ -51,13 +51,13 @@ The pins are the attributes a CABP treatment should cover (client brief, revised
 |---|---|---|
 | Round 1, Azithromycin | Message: "Good coverage, but some critical respiratory challenges remain." Evidence paragraph (Paukner S et al., 2024; Berbel D et al., 2022; ICMR 65%) | ☐ message ☐ 63% / 57% / 0-1% ☐ 16–50%, 90%, 5.7% ☐ ICMR 65% |
 | Round 1, Amox/clav | Message: "Not all respiratory challenges have been addressed." Evidence paragraph (Paukner S et al., 2024; Murphy ME et al., 2021; Nayar S et al., 2019; Owens RC Jr, 2008) | ☐ message ☐ >20% ☐ ~10% hypersensitivity ☐ paragraph opens with "They" (β-lactams), as supplied |
-| Strike, round 1 Nafithromycin | "STRIKE!" · "All 8 pins down in a single throw." · "One Molecule. Multiple Respiratory Challenges Addressed." plus the Nafithromycin evidence paragraph | ☐ **Changed:** the brief says "All 7 pins"; the game keeps 8 pins (client decision), so the line reads "All 8 pins" |
+| Strike, round 1 Nafithromycin | "You have won the game" (heading; the brief's "STRIKE!" heading removed at client request) · "All 8 pins down in a single throw." · "One Molecule. Multiple Respiratory Challenges Addressed." plus the Nafithromycin evidence paragraph | ☐ **Changed:** the brief says "All 7 pins"; the game keeps 8 pins (client decision), so the line reads "All 8 pins" |
 | Strike, round 2 after Azithromycin | "Perfect Strike Through Comprehensive Coverage" plus the Nafithromycin evidence paragraph | ☐ evidence also shown here (the brief gives it under Scenario 3 only) |
 | Strike, round 2 after Amox/clav | "All pins down" plus the Nafithromycin evidence paragraph | ☐ as above |
-| Round 2 miss, Azithromycin then Amox/clav | "One additional pin down. Some critical challenges remain unresolved." Amox/clav takes Bactericidal actions in round 2 (5 of 8 down; 1, 6, 8 standing) | ☐ which pin falls (client chose Bactericidal) |
+| Round 2 miss, Azithromycin then Amox/clav | "One additional pin down. Some critical challenges remain unresolved." Amox/clav only wobbles Bactericidal actions in round 2 (client decision), so no new pin falls: 4 of 8 down; 1, 5, 6, 8 standing. **The message says "One additional pin down" but none falls**: reword, e.g. "Some critical challenges remain unresolved." | ☐ message wording |
 | Round 2 miss, Amox/clav then Azithromycin | "Some pins still standing" (4 of 8 down; 1, 5, 6, 8 standing) | ☐ |
 | Azithromycin remaining pins | The brief lists 3 (MDR *S. pneumoniae*, Bactericidal, Short course). With 8 pins Monotherapy also stands, so the pop-up lists 4 | ☐ |
-| Round 2 rule | A pin a ball half-knocks in round 1 (Amox/clav, Bactericidal) goes over when that ball is thrown in round 2 | ☐ approved as a teaching model |
+| Wobble rule | Amox/clav half-knocks Bactericidal actions ("50% down"): it rocks and stays up, in round 1 and round 2 | ☐ approved as a teaching model |
 | Corrections to supplied text | "S. pneumonie" corrected to *S. pneumoniae*; species and gene names set in italics | ☐ |
 
 ## 3. Content gaps (placeholders in the build)

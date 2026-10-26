@@ -40,13 +40,18 @@ export function PinKey({ onOpenPin, disabled = false, cleared = [], className = 
             >
               <span className="pin-chip-num shrink-0 kiosk:bg-white kiosk:text-brand-navy">{p.number}</span>
               <span className="min-w-0 flex-1 text-sm text-ink-muted kiosk:text-[0.95rem] kiosk:text-white/80">
-                {hasDistinctLabel(p) && (
+                {hasDistinctLabel(p) ? (
                   <>
                     <span className="font-bold text-brand-navy kiosk:text-white">{p.label}</span>
                     {": "}
+                    <RichText value={p.name} />
                   </>
+                ) : (
+                  // Tag and wording are the same (Monotherapy): show it once, bold like the other tags.
+                  <span className="font-bold text-brand-navy kiosk:text-white">
+                    <RichText value={p.name} />
+                  </span>
                 )}
-                <RichText value={p.name} />
               </span>
             </button>
           </li>

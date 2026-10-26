@@ -115,7 +115,7 @@ describe('two rounds', () => {
 
   it.each([
     // [round 1 ball, round 2 ball, pins down in total, pins still up]
-    ['azithromycin', 'amoxclav', 5, [1, 6, 8]], // amox/clav adds Bactericidal actions
+    ['azithromycin', 'amoxclav', 4, [1, 5, 6, 8]], // amox/clav only wobbles Bactericidal actions
     ['azithromycin', 'nafithromycin', 8, []],
     ['amoxclav', 'azithromycin', 4, [1, 5, 6, 8]],
     ['amoxclav', 'nafithromycin', 8, []],

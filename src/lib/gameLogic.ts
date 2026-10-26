@@ -1,5 +1,5 @@
 import { DRUGS, PINS } from "@/data/gameData";
-import type { DrugId, LanePin, LanePins, Pin, PinNumber, PinStatus, RichText, Round } from "@/types/game";
+import type { DrugId, LanePin, LanePins, Pin, PinNumber, PinStatus, RichText } from "@/types/game";
 
 export const TOTAL_PINS = PINS.length;
 
@@ -56,15 +56,15 @@ export function laneBefore(cleared: readonly PinNumber[]): LanePins {
 
 /**
  * Every pin's state after throwing `drug`. Pins cleared after round 1 stay
- * cleared. In round 2 a pin this ball would only half-knock goes over (so
- * amox/clav after azithromycin takes Bactericidal actions down too).
+ * cleared. A half-knocked pin only ever wobbles, in either round (amox/clav
+ * on Bactericidal actions), so it is still up afterwards.
  */
-export function rollLane(drug: DrugId, round: Round, cleared: readonly PinNumber[]): LanePins {
+export function rollLane(drug: DrugId, cleared: readonly PinNumber[]): LanePins {
   return Object.fromEntries(
     PINS.map((p) => {
       if (cleared.includes(p.number)) return [p.number, "cleared"];
       const status = p.outcome[drug];
-      if (status === "down" || (status === "wobble" && round === 2)) return [p.number, "down"];
+      if (status === "down") return [p.number, "down"];
       return [p.number, status === "wobble" ? "wobble" : "up"];
     }),
   ) as Record<PinNumber, LanePin>;

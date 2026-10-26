@@ -37,7 +37,7 @@ function completeRoll(state: GameState): GameState {
   if (!drug) return state;
   const rolledDrugs = state.rolledDrugs.includes(drug) ? state.rolledDrugs : [...state.rolledDrugs, drug];
   const promptId = selectRollPrompt(drug, rolledDrugs, state.usedPrompts);
-  const lane = rollLane(drug, state.round, state.cleared);
+  const lane = rollLane(drug, state.cleared);
   return {
     ...state,
     phase: "result",

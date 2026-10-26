@@ -35,6 +35,9 @@ function throwBall(ball: RegExp) {
   act(() => vi.advanceTimersByTime(END_POPUP_DELAY_MS + 10));
 }
 
+/** The final result pop-up (over the lane). */
+const resultPage = () => screen.getByRole("dialog");
+
 const laneTags = () => screen.queryAllByRole("button", { name: /^Pin \d, / }).map((b) => b.getAttribute("aria-label")?.slice(0, 5));
 
 /** The footer's disclaimer line; also checks the teaching-model note is there with it. */
@@ -72,7 +75,7 @@ describe("GameShell", () => {
     act(() => vi.advanceTimersByTime(END_POPUP_DELAY_MS + 10));
     expect(screen.getByText("Good coverage, but some critical respiratory challenges remain.")).toBeInTheDocument();
     expect(disclaimer()).toBeVisible(); // between rounds
-    click(button(/^Round 2/));
+    click(button(/^Choose another ball/));
     throwBall(/^Amox.clav/);
     expect(screen.getByText("Unfortunately pins are still up")).toBeInTheDocument();
     expect(disclaimer()).toBeVisible(); // try-again pop-up
@@ -96,7 +99,7 @@ describe("GameShell", () => {
     startGame();
     const ballControl = screen.getByRole("button", { name: /^Roll the ball/ });
     expect(ballControl).toBeDisabled();
-    expect(screen.getByText("Choose a ball to roll")).toBeInTheDocument();
+    expect(screen.queryByText("Choose a ball to roll")).not.toBeInTheDocument();
     expect(screen.getAllByText("Which options would you choose to knock off all the pins for treatment of CABP?").length).toBeGreaterThan(0);
     click(button(/^Azithromycin/));
     expect(ballControl).toBeEnabled();
@@ -124,19 +127,20 @@ describe("GameShell", () => {
     expect(within(popup).queryByText(/Back to the start screen/)).not.toBeInTheDocument();
 
     // Round 2: fallen pins cleared, and only the two other balls on offer.
-    click(button(/^Round 2/));
+    click(button(/^Choose another ball/));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Round 2 · Choose your ball");
     expect(screen.queryByRole("button", { name: /^Azithromycin/ })).not.toBeInTheDocument();
     expect(button(/^Nafithromycin/)).toBeEnabled();
     expect(laneTags()).toEqual(["Pin 1", "Pin 5", "Pin 6", "Pin 8"]);
 
-    // Amox/clav knocks one more pin (Bactericidal actions).
+    // Amox/clav only half-knocks Bactericidal actions: it wobbles and stays up.
     throwBall(/^Amox.clav/);
-    expect(screen.getByRole("status")).toHaveTextContent("Round 2, Amox/clav: 5 of 8 pins down. Pins 1, 6 and 8 are still standing.");
-    popup = screen.getByRole("dialog");
+    expect(screen.getByRole("status")).toHaveTextContent("Round 2, Amox/clav: 4 of 8 pins down. Pins 1, 5, 6 and 8 are still standing.");
+    popup = resultPage();
     expect(within(popup).getByText("Unfortunately pins are still up")).toBeInTheDocument();
     expect(within(popup).getByText("One additional pin down. Some critical challenges remain unresolved.")).toBeInTheDocument();
-    expect(within(popup).getByText(/Still standing · 3 of 8 pins/)).toBeInTheDocument();
+    expect(within(popup).getByText(/Still standing · 4 of 8 pins/)).toBeInTheDocument();
+    expect(within(popup).getByText("50% down")).toBeInTheDocument();
     expect(within(popup).getByAltText(/MIQNAF/)).toBeInTheDocument();
     click(button(/try again/i));
     expect(button(/start game/i)).toBeInTheDocument();
@@ -145,10 +149,10 @@ describe("GameShell", () => {
   it("scenario 1: azithromycin, then nafithromycin in round 2, is a strike", () => {
     startGame();
     throwBall(/^Azithromycin/);
-    click(button(/^Round 2/));
+    click(button(/^Choose another ball/));
     throwBall(/^Nafithromycin/);
-    const popup = screen.getByRole("dialog");
-    expect(within(popup).getByText("STRIKE!")).toBeInTheDocument();
+    const popup = resultPage();
+    expect(within(popup).getByText("You have won the game")).toBeInTheDocument();
     expect(within(popup).getByText("Perfect Strike Through Comprehensive Coverage")).toBeInTheDocument();
     expect(within(popup).getByLabelText("Evidence")).toHaveTextContent("post-antibiotic effect");
     expect(within(popup).getByText(/You have won the game/)).toBeInTheDocument();
@@ -162,10 +166,10 @@ describe("GameShell", () => {
     expect(within(popup).getByText(/Round 1 · 1 of 8 pins down/)).toBeInTheDocument();
     expect(within(popup).getByText("50% down")).toBeInTheDocument(); // Bactericidal rocked but stayed up
     expect(within(popup).getByLabelText("Evidence")).toHaveTextContent("Owens RC Jr, 2008");
-    click(button(/^Round 2/));
+    click(button(/^Choose another ball/));
     expect(screen.queryByRole("button", { name: /^Amox.clav/ })).not.toBeInTheDocument();
     throwBall(/^Azithromycin/);
-    popup = screen.getByRole("dialog");
+    popup = resultPage();
     expect(within(popup).getByText("Some pins still standing")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Round 2, Azithromycin: 4 of 8 pins down. Pins 1, 5, 6 and 8 are still standing.");
   });
@@ -173,23 +177,25 @@ describe("GameShell", () => {
   it("scenario 2: amox/clav, then nafithromycin in round 2, is a strike", () => {
     startGame();
     throwBall(/^Amox.clav/);
-    click(button(/^Round 2/));
+    click(button(/^Choose another ball/));
     throwBall(/^Nafithromycin/);
-    expect(within(screen.getByRole("dialog")).getByText("All pins down")).toBeInTheDocument();
+    expect(within(resultPage()).getByText("All pins down")).toBeInTheDocument();
   });
 
   it("returns to the start screen on its own if nobody taps the final pop-up", () => {
     startGame();
     throwBall(/^Nafithromycin/);
-    expect(screen.getByText(/Back to the start screen in 20s/)).toBeInTheDocument();
-    for (let i = 0; i < 20; i++) act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getByText(/Back to the start screen in 30s/)).toBeInTheDocument();
+    for (let i = 0; i < 29; i++) act(() => vi.advanceTimersByTime(1000));
+    expect(screen.queryByRole("button", { name: /start game/i })).not.toBeInTheDocument(); // still waiting at 29s
+    act(() => vi.advanceTimersByTime(1000));
     expect(button(/start game/i)).toBeInTheDocument();
 
     // The next player's pop-up gets the full countdown again.
     click(button(/start game/i));
     closeQuestion();
     throwBall(/^Nafithromycin/);
-    expect(screen.getByText(/Back to the start screen in 20s/)).toBeInTheDocument();
+    expect(screen.getByText(/Back to the start screen in 30s/)).toBeInTheDocument();
   });
 
   it("does not roll on a tap, a short drag or a sideways swipe", () => {
@@ -215,13 +221,15 @@ describe("GameShell", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Round 1, Nafithromycin: 8 of 8 pins down. No pins are standing.");
     expect(laneTags()).toHaveLength(0);
 
-    expect(screen.queryByText("STRIKE!")).not.toBeInTheDocument();
+    expect(screen.queryByText("You have won the game")).not.toBeInTheDocument();
     act(() => vi.advanceTimersByTime(END_POPUP_DELAY_MS + 10));
-    const popup = screen.getByRole("dialog");
-    expect(within(popup).getByText("STRIKE!")).toBeInTheDocument();
+    const popup = resultPage();
+    expect(within(popup).getByRole("heading", { name: "You have won the game" })).toBeInTheDocument();
+    expect(within(popup).queryByText("STRIKE!")).not.toBeInTheDocument(); // removed
     expect(within(popup).getByText("All 8 pins down in a single throw.")).toBeInTheDocument();
     expect(within(popup).getByText("One Molecule. Multiple Respiratory Challenges Addressed.")).toBeInTheDocument();
-    expect(within(popup).getByText(/You have won the game · Thank you for playing/)).toBeInTheDocument();
+    expect(within(popup).getByText("You have won the game")).toBeInTheDocument();
+    expect(within(popup).queryByText(/Thank you for playing/)).not.toBeInTheDocument();
     expect(within(popup).getByAltText(/MIQNAF/)).toBeInTheDocument();
     click(button(/back to start/i));
     expect(button(/start game/i)).toBeInTheDocument();
