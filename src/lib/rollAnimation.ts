@@ -262,9 +262,8 @@ export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number, wobbles
   }
 
   if (!falls) {
-    // A brief wobble from the passing ball, then the pin stays upright, dimmed.
-    const wobble = u < 3 ? 0.06 * Math.exp(-4.5 * u) * Math.sin(17 * u) : 0;
-    return { ...rest, angle: wobble, axisX: 1, axisZ: 0, dim: clamp01(u / 0.45) };
+    // Not in the shaking category: it stays perfectly still (upright, dimmed).
+    return { ...rest, dim: clamp01(u / 0.45) };
   }
 
   const k = knock(n, pathX);

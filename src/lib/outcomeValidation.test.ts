@@ -52,12 +52,12 @@ describe("outcome matrix", () => {
     expect(pinsDownCount(drug) + standingPins(drug).length).toBe(10);
   });
 
-  it("the second throw knocks nothing more down: cleared pins stay gone, the rest only shake", () => {
+  it("the second throw knocks nothing more down: cleared pins stay gone, only the shaking pin shakes", () => {
     for (const drug of CONVENTIONAL_BALLS) {
       const first = rollLane(drug);
       const second = secondThrowLane(first);
       for (const pin of PINS) {
-        expect(second[pin.number]).toBe(first[pin.number] === "down" ? "gone" : "wobble");
+        expect(second[pin.number]).toBe(first[pin.number] === "down" ? "gone" : first[pin.number] === "wobble" ? "wobble" : "up");
       }
     }
   });

@@ -54,6 +54,7 @@ export function Scorecard({ open, name, therapy, frame1Score, frame2Score, onCon
           >
             <div className="tricolour-rule h-2" aria-hidden />
             <div className="flex flex-col items-center px-4 py-6 sm:px-10 sm:py-8 short:py-3 kiosk:px-[3rem] kiosk:py-[clamp(1.5rem,3.5vh,2.5rem)]">
+              <BrandLogo logo="productLogo" className="mb-4 h-10 sm:h-12 short:mb-1.5 short:h-7 kiosk:mb-[clamp(0.8rem,2vh,1.25rem)] kiosk:h-[clamp(2.8rem,5.4vh,3.8rem)]" />
               <p className="eyebrow font-body kiosk:text-base">Dr. {name}</p>
               <h2
                 id="scorecard-heading"
@@ -104,7 +105,6 @@ export function Scorecard({ open, name, therapy, frame1Score, frame2Score, onCon
                 </div>
               )}
 
-              <BrandLogo logo="productLogo" className="mt-5 h-10 sm:h-16 short:mt-2 short:h-7 kiosk:mt-[clamp(1rem,2.4vh,1.75rem)] kiosk:h-[clamp(3.5rem,7vh,6rem)]" />
 
               <div className="sticky bottom-0 z-10 -mb-2 mt-5 flex w-full justify-center bg-surface pb-2 short:mt-2 kiosk:mt-[clamp(1rem,2.4vh,1.75rem)]">
                 <button

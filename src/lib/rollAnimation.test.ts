@@ -155,7 +155,11 @@ describe("roll animation", () => {
         expect(end.opacity).toBe(0);
       } else {
         expect(atStart).toMatchObject({ lift: 0, dx: 0, dz: 0 }); // not lifted or moved
-        expect(end).toMatchObject({ opacity: 1, dx: 0, dz: 0 }); // shook, still standing
+        expect(end).toMatchObject({ opacity: 1, dx: 0, dz: 0 }); // still standing
+        // Only a pin in the shaking category moves; every other standing pin stays perfectly still.
+        const moved = Array.from({ length: 50 }, (_, i) => Math.abs(lanePinPose(n, lane[n], "rolling", 2000 + i * 40, ctx).angle));
+        if (lane[n] === "wobble") expect(Math.max(...moved)).toBeGreaterThan(0.1);
+        else expect(Math.max(...moved)).toBe(0);
       }
     }
   });

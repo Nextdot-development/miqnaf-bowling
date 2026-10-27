@@ -92,12 +92,16 @@ export function laneStanding(lane: LanePins): PinNumber[] {
 
 /**
  * The same ball thrown again at what the first throw left: the pins it
- * knocked down are gone, and every pin still up shakes but stays up. No pin
- * falls on a second throw unless an approved outcome is configured.
+ * knocked down are gone; the pins in the supplied "shaking" category shake
+ * again but stay up; every other standing pin stays still. No pin falls on a
+ * second throw unless an approved outcome is configured.
  */
 export function secondThrowLane(first: LanePins): LanePins {
   return Object.fromEntries(
-    PINS.map((p) => [p.number, first[p.number] === "down" || first[p.number] === "gone" ? "gone" : "wobble"]),
+    PINS.map((p) => {
+      const s = first[p.number];
+      return [p.number, s === "down" || s === "gone" ? "gone" : s === "wobble" ? "wobble" : "up"];
+    }),
   ) as Record<PinNumber, LanePin>;
 }
 
