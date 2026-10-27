@@ -17,12 +17,15 @@ const ROWS = [
   ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
   ["Z", "X", "C", "V", "B", "N", "M", ".", "-", "'"],
 ] as const;
+/** On phones these leave the third row (so its letters get room) and sit beside Space. */
+const PUNCTUATION = [".", "-", "'"] as const;
+const isPunctuation = (k: string) => (PUNCTUATION as readonly string[]).includes(k);
 
 /** Keeps focus (and the caret) in the name field while a key is tapped. */
 const keepFocus = (e: PointerEvent) => e.preventDefault();
 
 const KEY_BASE =
-  "flex h-14 min-w-0 flex-1 select-none items-center justify-center rounded-xl font-display text-xl font-bold shadow-[inset_0_-4px_0_rgb(0_0_0/0.18)] transition-transform active:translate-y-0.5 active:shadow-none sm:h-16 sm:text-2xl kiosk:h-auto kiosk:text-[clamp(1.6rem,3.4vh,2.4rem)]";
+  "flex h-11 min-w-0 flex-1 select-none items-center justify-center rounded-lg font-display text-lg font-bold shadow-[inset_0_-3px_0_rgb(0_0_0/0.18)] transition-transform active:translate-y-0.5 active:shadow-none sm:h-16 sm:rounded-xl sm:text-2xl kiosk:h-auto kiosk:text-[clamp(1.6rem,3.4vh,2.4rem)]";
 /** Letter keys: white on the navy tray. */
 const KEY = `${KEY_BASE} bg-surface text-brand-navy active:bg-brand-gold`;
 /** Shift, Delete, Clear: a quieter tone, so the letters stand out. */
@@ -53,7 +56,7 @@ export function OnScreenKeyboard({ value, onChange, maxLength, shift, onShiftCha
   return (
     <div role="group" aria-label="On-screen keyboard" data-sound="key" className="mx-auto w-full space-y-2 kiosk:flex kiosk:h-full kiosk:flex-col kiosk:gap-[0.75rem] kiosk:space-y-0">
       {ROWS.map((row, i) => (
-        <div key={i} className={`flex gap-1.5 sm:gap-2 kiosk:min-h-[3.4rem] kiosk:flex-1 kiosk:gap-[0.75rem] ${i === 1 ? "px-[4%]" : ""}`}>
+        <div key={i} className={`flex gap-1 sm:gap-2 kiosk:min-h-[3.4rem] kiosk:flex-1 kiosk:gap-[0.75rem] ${i === 1 ? "px-[4%]" : ""}`}>
           {i === 2 && (
             <button
               type="button"
@@ -69,7 +72,7 @@ export function OnScreenKeyboard({ value, onChange, maxLength, shift, onShiftCha
           {row.map((k) => {
             const ch = /[A-Z]/.test(k) ? (shift ? k : k.toLowerCase()) : k;
             return (
-              <button key={k} type="button" onPointerDown={keepFocus} onClick={() => type(k)} aria-label={ch} className={KEY}>
+              <button key={k} type="button" onPointerDown={keepFocus} onClick={() => type(k)} aria-label={ch} className={`${KEY} ${isPunctuation(k) ? "hidden sm:flex" : ""}`}>
                 {ch}
               </button>
             );
@@ -81,10 +84,15 @@ export function OnScreenKeyboard({ value, onChange, maxLength, shift, onShiftCha
           )}
         </div>
       ))}
-      <div className="flex gap-1.5 sm:gap-2 kiosk:min-h-[3.4rem] kiosk:flex-1 kiosk:gap-[0.75rem]">
+      <div className="flex gap-1 sm:gap-2 kiosk:min-h-[3.4rem] kiosk:flex-1 kiosk:gap-[0.75rem]">
         <button type="button" onPointerDown={keepFocus} onClick={clear} className={`${FN_KEY} flex-[1.5] text-base sm:text-lg kiosk:text-[1.2rem]`}>
           Clear
         </button>
+        {PUNCTUATION.map((k) => (
+          <button key={k} type="button" onPointerDown={keepFocus} onClick={() => type(k)} aria-label={k} className={`${KEY} sm:hidden`} tabIndex={-1}>
+            {k}
+          </button>
+        ))}
         <button type="button" onPointerDown={keepFocus} onClick={space} aria-label="Space" className={`${KEY} flex-[6] text-base sm:text-lg kiosk:text-[1.2rem]`}>
           Space
         </button>

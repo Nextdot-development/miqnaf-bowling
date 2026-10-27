@@ -26,7 +26,7 @@ export function TherapyScreen({ name, onStart }: TherapyScreenProps) {
         <button
           type="button"
           onClick={onStart}
-          className="btn-primary px-10 py-3.5 text-xl tracking-[0.06em] sm:text-2xl kiosk:px-[3rem] kiosk:py-[clamp(0.9rem,2vh,1.1rem)] kiosk:text-[1.7rem]"
+          className="btn-primary whitespace-nowrap px-6 py-3.5 text-lg tracking-[0.06em] sm:px-10 sm:text-2xl kiosk:px-[3rem] kiosk:py-[clamp(0.9rem,2vh,1.1rem)] kiosk:text-[1.7rem]"
         >
           Choose your therapy <ArrowRight className="h-7 w-7" strokeWidth={3} aria-hidden />
         </button>

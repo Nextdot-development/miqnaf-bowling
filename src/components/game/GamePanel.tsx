@@ -40,24 +40,25 @@ export function GamePanel({ titleId, title, children, actions, overlay, wide = f
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`relative flex max-h-[calc(100dvh-2rem)] w-full flex-col items-center overflow-y-auto no-scrollbar ${
+        className={`relative flex max-h-[calc(100dvh-2rem)] w-full flex-col items-center ${
           wide ? "max-w-3xl kiosk:max-w-[56rem]" : "max-w-2xl kiosk:max-w-[48rem]"
         }`}
         initial={reduce ? false : { scale: 0.7, opacity: 0, y: 24 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 20 }}
       >
-        <div className="game-panel w-full">
-          <div className="game-panel-head">
+        {/* On a small screen the body scrolls (by touch); the title and the button stay in view. */}
+        <div className="game-panel flex min-h-0 w-full flex-col">
+          <div className="game-panel-head shrink-0">
             <h2 id={titleId} className="game-stamp game-panel-title">
               {title}
             </h2>
           </div>
-          <div className="flex flex-col items-center px-5 py-5 text-center sm:px-10 sm:py-7 short:py-3 kiosk:px-[2.75rem] kiosk:py-[clamp(1.1rem,2.8vh,2rem)]">
+          <div className="no-scrollbar flex min-h-0 flex-col items-center overflow-y-auto overscroll-contain px-5 py-5 text-center sm:px-10 sm:py-7 short:py-3 kiosk:px-[2.75rem] kiosk:py-[clamp(1.1rem,2.8vh,2rem)]">
             {children}
           </div>
         </div>
-        <div className="mt-5 flex flex-wrap justify-center gap-4 short:mt-2 kiosk:mt-[clamp(1rem,2.4vh,1.6rem)]">{actions}</div>
+        <div className="mt-5 flex shrink-0 flex-wrap justify-center gap-4 short:mt-2 kiosk:mt-[clamp(1rem,2.4vh,1.6rem)]">{actions}</div>
       </motion.div>
     </motion.div>
   );
