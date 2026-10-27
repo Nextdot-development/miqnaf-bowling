@@ -1,6 +1,6 @@
-# CABP Bowling Challenge
+# CABP Challenge: Conventional Therapy vs Novel Therapy
 
-An interactive teaching model for scientific discussion among healthcare professionals at a medical conference. A participant picks one of three balls (azithromycin, amox/clav, nafithromycin) and rolls it at eight pins on a 3D lane, each pin an attribute a CABP treatment should cover (MDR S. pneumoniae coverage, atypical coverage, safety, lung levels and so on). The pins that fall come from a fixed, supplied outcome matrix. Then they see whether all the pins fell, and can open a card for each pin.
+An interactive game for scientific discussion among healthcare professionals at a medical conference: the CABP Challenge, Conventional Therapy vs Novel Therapy. On a 3D lane with ten treatment-barrier pins, the doctor enters their name, chooses a conventional combination (Amoxi-Clav + Azithromycin or Amoxi-Clav + Clarithromycin) and bowls Frame 1 (two throws, same ball); a fresh rack is set and MIQNAF® (nafithromycin) is presented automatically for Frame 2. Every pin state and score comes from fixed, supplied configuration.
 
 > **Draft scientific content.** Read [SCIENTIFIC_REVIEW.md](SCIENTIFIC_REVIEW.md) before any release.
 
@@ -36,11 +36,11 @@ This plays the full flow in a headless browser, saves screenshots of each state 
 
 ## How it works
 
-**Game flow:** intro → pick a ball → swipe the ball up the lane → watch (about 2 s of ball travel, then the pins settle) → result → win or try-again pop-up → back to the start screen for the next player (one ball each). The pop-up returns to the start on its own after 20 s. "New game" in the header also restarts, after a confirmation.
+**Game flow:** `WELCOME → NAME_ENTRY → THERAPY_SELECTION → FRAME_1_READY → FRAME_1_ROLLING → FRAME_1_RESULT → SECOND_ATTEMPT → TRANSITION → FRAME_2_READY → FRAME_2_ROLLING → FRAME_2_RESULT → SCORECARD → CLOSING_SCREEN` (`sessionStage` in `src/lib/gameReducer.ts`). The reducer checks every action against the current stage: the therapy is locked once bowling starts, Frame 1 allows exactly two throws with the same ball (the second only shakes the standing pins), the transition resets the rack once (old pins lifted away, ten fresh pins lowered into the same spots), MIQNAF® is presented automatically and thrown once, and New game asks before resetting. All throws take the same line and timing.
 
 **Swipe to roll:** there is no ROLL button. The player swipes the ball up the lane with a finger (or drags with a mouse); the ball follows the finger and is released into the roll (`src/components/game/SwipeToRoll.tsx`). A tap, a short drag, or a sideways or downward swipe does not roll. The gesture only starts the roll: its strength never changes the ball's path, speed or the outcome. The small forward nudge while dragging fades out within 0.22 s of release (`aimOffset` in `rollAnimation.ts`). Keyboard users can focus the ball and press Enter or Space.
 
-**Single source of truth:** every ball, pin, outcome, scenario message, evidence paragraph and the footer live in `src/data/gameData.ts`. The outcome matrix exists only in `PINS[].outcome`. Pin states for each throw (round 1 and round 2), counters and animations are all derived from it through `src/lib/gameLogic.ts`. `src/lib/outcomeValidation.ts` checks the expected totals (azithromycin 4, amox/clav 1, nafithromycin 8) and standing pins.
+**Single source of truth:** every ball, pin, outcome, score and message lives in `src/data/gameData.ts`. The outcome matrix exists only in `PINS[].outcome`; scores are configured values (`FIRST_THROW_SCORE`, `FRAME_1_SCORE`, `FRAME_2_SCORE`), never calculated. Pin states for each throw are derived through `src/lib/gameLogic.ts` (`rollLane`, `secondThrowLane`); `src/lib/outcomeValidation.ts` checks the supplied wording and results. All content is draft pending review: see SCIENTIFIC_REVIEW.md.
 
 **Deterministic animation:** the ball's path and timing come from `src/lib/rollAnimation.ts`, a pure function of time with no drug input. The roll timer lives in `useGameState`, not in the renderer. The 3D scene only shows the predetermined outcome; no physics engine decides anything.
 
@@ -55,8 +55,9 @@ src/
   components/game/     GameShell (state wiring), IntroScreen, GameHeader, GameStage,
                        BowlingScene / BowlingLane / BowlingBall / PinDeck / PathogenPin (3D),
                        LaneFallback2D (no-WebGL lane + loading placeholder),
-                       BallRack (pick a ball beside the lane), SwipeToRoll, EndScreen + Confetti
-                       (win / try-again pop-ups), PinKey, PathogenInfoDialog,
+                       NameEntryScreen, TherapyScreen, BallRack, SwipeToRoll, ThrowResultPopup,
+                       TransitionCard, Scorecard, ClosingScreen,
+                       PinKey, PathogenInfoDialog,
                        AccessiblePinList, SoundToggle, GameFooter
   components/ui/       Dialog (focus trap, Escape, focus return), RichText
   data/                gameData.ts  ← all supplied content

@@ -133,10 +133,6 @@ export function createBallTexture(seed: number): THREE.CanvasTexture {
   return tex;
 }
 
-/**
- * Pin profile as a lathe. Points are sampled at even heights so the lathe's
- * v coordinate equals height fraction (lets the stripe texture line up).
- */
 export function createPinGeometry(): THREE.LatheGeometry {
   const curve = new THREE.SplineCurve(PIN_PROFILE.map(([h, r]) => new THREE.Vector2(h, r)));
   const dense = curve.getPoints(400);

@@ -1,4 +1,3 @@
-import { PINS } from "@/data/gameData";
 import type { PinNumber } from "@/types/game";
 
 export const LANE_HALF_WIDTH = 0.92;
@@ -10,15 +9,16 @@ export const ARROWS_Z = -1.25;
 export const BALL_RADIUS = 0.11;
 export const BALL_START_Z = -0.05;
 
-/** Intro screen: the three balls sit side by side at the start position. */
-export const INTRO_BALL_SPACING = 0.55;
-export function introBallX(index: number): number {
-  return (index - 1) * INTRO_BALL_SPACING;
+/** Intro screen: Player 1's balls sit side by side at the start position, centred. */
+export const INTRO_BALL_SPACING = 0.7;
+export function introBallX(index: number, count: number): number {
+  return (index - (count - 1) / 2) * INTRO_BALL_SPACING;
 }
 
-export const PIN_HEIGHT = 0.58;
-export const PIN_MAX_RADIUS = 0.087;
-export const PIN_SPACING = 0.4;
+export const PIN_HEIGHT = 0.7;
+export const PIN_MAX_RADIUS = 0.104;
+/** Centre-to-centre distance between neighbouring pins in the rack. */
+export const PIN_SPACING = 0.46;
 
 /** Pin silhouette: [height fraction, radius as a fraction of max]. */
 export const PIN_PROFILE: readonly (readonly [number, number])[] = [
@@ -38,17 +38,25 @@ export const PIN_PROFILE: readonly (readonly [number, number])[] = [
   [1.0, 0.0],
 ];
 
-export const FRONT_ROW_Z = -3.4;
-export const REAR_ROW_Z = -3.8;
-export const DECK_END_Z = -4.45;
-export const PIT_BACK_Z = -5.1;
+/** The head pin (pin 1), the point of the triangle nearest the bowler. */
+export const FRONT_ROW_Z = -3.0;
+/**
+ * Depth between rows. Deeper than an equilateral rack (0.40), so that from the
+ * bowler's end each row stands clearly behind the one in front, as the rack
+ * looks from a raised view of a real lane.
+ */
+export const ROW_GAP = 0.6;
+export const DECK_END_Z = -5.15;
+export const PIT_BACK_Z = -5.75;
 
 export const CAMERA = {
-  position: [0, 0.74, 2.05] as const,
-  target: [0, -0.16, -5] as const,
+  position: [0, 1.8, 2.9] as const,
+  target: [0, -0.45, -5] as const,
   /** Horizontal field of view the framing is designed around. */
-  horizontalFov: 55,
-  minVerticalFov: 27,
+  horizontalFov: 63,
+  // A little headroom so the back row clears the card at the top of the lane
+  // and the ball clears the bottom edge, even on wide, short browser windows.
+  minVerticalFov: 34,
   maxVerticalFov: 62,
 };
 
@@ -61,10 +69,35 @@ export function verticalFovFor(aspect: number): number {
   return Math.min(CAMERA.maxVerticalFov, Math.max(CAMERA.minVerticalFov, v));
 }
 
+/**
+ * The rack: the full ten-pin triangle pointing at the bowler, numbered as in
+ * real bowling. [column, row]: columns in half-spacings from the centre-line,
+ * rows counted back from the head pin.
+ *
+ *        7   8   9   10
+ *          4   5   6
+ *            2   3
+ *              1        <- bowler
+ */
+const RACK: Readonly<Record<PinNumber, readonly [number, number]>> = {
+  1: [0, 0],
+  2: [-1, 1],
+  3: [1, 1],
+  4: [-2, 2],
+  5: [0, 2],
+  6: [2, 2],
+  7: [-3, 3],
+  8: [-1, 3],
+  9: [1, 3],
+  10: [3, 3],
+};
+
+/** Row of a pin in the rack (0 = head pin). */
+export function pinRow(n: PinNumber): number {
+  return RACK[n][1];
+}
+
 export function pinPosition(n: PinNumber): { x: number; z: number } {
-  const pin = PINS.find((p) => p.number === n);
-  const index = (n - 1) % 4;
-  const frontX = (index - 1.5) * PIN_SPACING;
-  if (pin?.row === "rear") return { x: frontX + PIN_SPACING / 2, z: REAR_ROW_Z };
-  return { x: frontX, z: FRONT_ROW_Z };
+  const [col, row] = RACK[n];
+  return { x: (col * PIN_SPACING) / 2, z: FRONT_ROW_Z - row * ROW_GAP };
 }

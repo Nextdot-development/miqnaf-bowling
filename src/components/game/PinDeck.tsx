@@ -7,7 +7,7 @@ import { PathogenPin } from "./PathogenPin";
 import { createPinGeometry, createPinTexture } from "./sceneAssets";
 
 interface PinDeckProps {
-  /** Every pin's state for this throw; cleared pins are not drawn. */
+  /** Every pin's state for this throw. */
   lane: LanePins;
   interactive: boolean;
   onPinSelect: (pin: Pin) => void;
@@ -29,16 +29,13 @@ export function PinDeck({ lane, interactive, onPinSelect }: PinDeckProps) {
     <group>
       {PINS.map((pin) => {
         const status = lane[pin.number];
-        // Knocked down in round 1: cleared from the lane for round 2.
-        if (status === "cleared") return null;
         return (
           <PathogenPin
             key={pin.number}
             pin={pin}
             geometry={geometry}
             skin={skin}
-            falls={status === "down"}
-            wobbles={status === "wobble"}
+            status={status}
             interactive={interactive}
             onSelect={onPinSelect}
           />

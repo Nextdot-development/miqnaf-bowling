@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { BALL_RADIUS, BALL_START_Z } from "@/lib/laneLayout";
-import { aimOffset, ballPose } from "@/lib/rollAnimation";
+import { aimOffset, ballLineFor, ballPose, STRAIGHT_LINE } from "@/lib/rollAnimation";
 import { createBallTexture } from "./sceneAssets";
 import { elapsedMs, useSceneTimeline } from "./sceneClock";
 
@@ -66,12 +66,16 @@ export function BowlingBall({ color, offsetX = 0, still = false }: BowlingBallPr
   useFrame(() => {
     const t = timeline.current;
     const elapsed = still ? 0 : elapsedMs(t, performance.now());
-    const pose = ballPose(elapsed);
+    // Each throw takes its own curved line (fixed by its start time).
+    const line = still || t.lineSeed === null ? STRAIGHT_LINE : ballLineFor(t.lineSeed, t.lineDrug);
+    const pose = ballPose(elapsed, line);
     if (!group.current || !spinner.current) return;
     // The swipe nudges the ball forward; that offset fades out as the roll starts.
     const z = still ? pose.z : pose.z - aimOffset(t.phase, elapsed, t.aim.current);
     group.current.visible = pose.visible;
     group.current.position.set(pose.x + offsetX, pose.y, z);
+    // Turn to follow the curve, then roll forward along it.
+    group.current.rotation.y = -pose.heading;
     spinner.current.rotation.x = -(BALL_START_Z - z) / BALL_RADIUS;
   });
 

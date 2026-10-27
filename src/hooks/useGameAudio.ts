@@ -109,14 +109,24 @@ export function useGameAudio(enabled: boolean) {
 
         const src = ctx.createBufferSource();
         src.buffer = buffer;
+        if (cue.loop) {
+          src.loop = true;
+          src.loopStart = cue.loop[0];
+          src.loopEnd = cue.loop[1];
+        }
         const gain = ctx.createGain();
         gain.gain.setValueAtTime(cue.gain, when);
+        // Bring the quiet rolling up once the set-down thud has passed.
+        if (cue.boost) {
+          gain.gain.setValueAtTime(cue.gain, Math.max(when, t0 + cue.boost.from));
+          gain.gain.linearRampToValueAtTime(cue.boost.gain, Math.max(when + 0.01, t0 + cue.boost.to));
+        }
         src.connect(gain).connect(master);
         src.start(when, offset);
         if (cue.fadeFrom !== undefined && cue.fadeTo !== undefined) {
           const from = Math.max(when, t0 + cue.fadeFrom);
           const to = Math.max(from + 0.01, t0 + cue.fadeTo);
-          gain.gain.setValueAtTime(cue.gain, from);
+          gain.gain.setValueAtTime(cue.boost?.gain ?? cue.gain, from);
           gain.gain.linearRampToValueAtTime(0.0001, to);
           src.stop(to + 0.02);
         }
@@ -127,7 +137,7 @@ export function useGameAudio(enabled: boolean) {
     [enabled, ensureContext],
   );
 
-  /** Win (confetti pops + chime) or lose ("wah-wah") sound for the end pop-up. */
+  /** Win (rising chime) or lose ("wah-wah") sound for the end pop-up. */
   const playEnding = useCallback(
     (outcome: EndOutcome) => {
       if (!enabled) return;

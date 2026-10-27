@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { gameReducer, initialGameState } from "@/lib/gameReducer";
 import { pinsDownCount, TOTAL_PINS } from "@/lib/gameLogic";
-import { ROLL_TOTAL_MS } from "@/lib/timing";
+import { ROLL_TOTAL_MS, STRIKE_RESULT_MS } from "@/lib/timing";
 import { useGameAudio } from "@/hooks/useGameAudio";
 import type { DrugId, PinNumber } from "@/types/game";
 
@@ -13,28 +13,48 @@ export function useGameState(reducedMotion: boolean) {
 
   const { phase, rollId, rollInstant, selectedDrug } = state;
 
+  // A throw that knocks every pin down (a strike) shows its result as soon as
+  // the pins are down; any other throw waits for the pins to settle.
+  const strike = phase === "rolling" && !!selectedDrug && state.attempts === 1 && pinsDownCount(selectedDrug) === TOTAL_PINS;
   useEffect(() => {
     if (phase !== "rolling" || rollInstant) return;
-    const done = window.setTimeout(() => dispatch({ type: "ROLL_COMPLETE", rollId }), ROLL_TOTAL_MS);
+    const done = window.setTimeout(() => dispatch({ type: "ROLL_COMPLETE", rollId }), strike ? STRIKE_RESULT_MS : ROLL_TOTAL_MS);
     return () => window.clearTimeout(done);
-  }, [phase, rollId, rollInstant]);
+  }, [phase, rollId, rollInstant, strike]);
 
+
+
+  // The transition sets a fresh rack: the old pins clear, then ten pins drop into place.
+  const { rackResetAt } = state;
+  useEffect(() => {
+    if (phase !== "transition" || rackResetAt !== null) return;
+    const t = window.setTimeout(() => dispatch({ type: "RACK_RESET", at: performance.now() }), reducedMotion ? 0 : 700);
+    return () => window.clearTimeout(t);
+  }, [phase, rackResetAt, reducedMotion]);
 
   const { playRoll } = audio;
   const soundedRoll = useRef(0);
   useEffect(() => {
     if (rollId === 0 || soundedRoll.current === rollId || !selectedDrug) return;
-    if (phase !== "rolling" && !(phase === "result" && rollInstant)) return;
+    if (phase !== "rolling" && !((phase === "result" || phase === "transition") && rollInstant)) return;
     soundedRoll.current = rollId;
-    void playRoll({ pinsDown: pinsDownCount(selectedDrug), totalPins: TOTAL_PINS, instant: rollInstant });
-  }, [phase, rollId, rollInstant, selectedDrug, playRoll]);
+    // The second throw knocks nothing down: just the roll and a light rattle.
+    const pinsDown = state.frame === 1 && state.attempts === 2 ? 0 : pinsDownCount(selectedDrug);
+    void playRoll({ pinsDown, totalPins: TOTAL_PINS, instant: rollInstant });
+  }, [phase, rollId, rollInstant, selectedDrug, playRoll, state.frame, state.attempts]);
 
   const actions = useMemo(
     () => ({
       start: () => dispatch({ type: "START_SESSION" }),
+      submitName: (name: string) => dispatch({ type: "SUBMIT_NAME", name }),
+      selectTherapy: (drug: DrugId) => dispatch({ type: "SELECT_THERAPY", drug }),
+      startBowling: () => dispatch({ type: "START_BOWLING" }),
+      startFrame2: () => dispatch({ type: "START_FRAME_2" }),
+      skipSecondThrow: () => dispatch({ type: "SKIP_SECOND_ATTEMPT" }),
+      takeSecondChance: () => dispatch({ type: "TAKE_SECOND_CHANCE" }),
+      showScorecard: () => dispatch({ type: "SHOW_SCORECARD" }),
+      showClosing: () => dispatch({ type: "SHOW_CLOSING" }),
       newSession: () => dispatch({ type: "NEW_SESSION" }),
-      selectDrug: (drug: DrugId) => dispatch({ type: "SELECT_DRUG", drug }),
-      nextRound: () => dispatch({ type: "NEXT_ROUND" }),
       openPin: (pin: PinNumber) => dispatch({ type: "OPEN_PIN", pin }),
       closePin: () => dispatch({ type: "CLOSE_PIN" }),
     }),

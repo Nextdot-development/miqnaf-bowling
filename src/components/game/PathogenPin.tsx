@@ -5,22 +5,22 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SCENE } from "@/lib/brand";
 import { pinPosition } from "@/lib/laneLayout";
-import { pinPose } from "@/lib/rollAnimation";
-import type { Pin } from "@/types/game";
+import { lanePinPose, rackLineX } from "@/lib/rollAnimation";
+import type { LanePin, Pin } from "@/types/game";
 import { elapsedMs, useSceneTimeline } from "./sceneClock";
 
 const WHITE = new THREE.Color(SCENE.pinWhite);
 const DIMMED = new THREE.Color("#a9afbf");
 const tmpAxis = new THREE.Vector3();
+const tmpSpin = new THREE.Quaternion();
+const UP = new THREE.Vector3(0, 1, 0);
 
 interface PathogenPinProps {
   pin: Pin;
   geometry: THREE.BufferGeometry;
   skin: THREE.Texture;
-  /** Whether the outcome matrix scripts this pin to fall on the current roll. */
-  falls: boolean;
-  /** Half-knocked: rocks as if about to fall, then stays up. */
-  wobbles?: boolean;
+  /** This pin on the current throw: up, down, shaking, or gone (cleared by an earlier throw). */
+  status: LanePin;
   interactive: boolean;
   onSelect: (pin: Pin) => void;
 }
@@ -29,8 +29,7 @@ export function PathogenPin({
   pin,
   geometry,
   skin,
-  falls,
-  wobbles = false,
+  status,
   interactive,
   onSelect,
 }: PathogenPinProps) {
@@ -38,10 +37,8 @@ export function PathogenPin({
   const body = useRef<THREE.Group>(null);
   const timeline = useSceneTimeline();
   // Keep the latest outcome in a ref so the frame loop never goes stale.
-  const fallsRef = useRef(falls);
-  fallsRef.current = falls;
-  const wobblesRef = useRef(wobbles);
-  wobblesRef.current = wobbles;
+  const statusRef = useRef(status);
+  statusRef.current = status;
 
   const material = useMemo(
     () =>
@@ -60,10 +57,21 @@ export function PathogenPin({
   useFrame(() => {
     const g = body.current;
     if (!g) return;
-    const pose = pinPose(pin.number, fallsRef.current, elapsedMs(timeline.current, performance.now()), wobblesRef.current);
+    const t = timeline.current;
+    const pathX = t.lineDrug ? rackLineX(t.lineDrug) : 0;
+    const now = performance.now();
+    const pose = lanePinPose(pin.number, statusRef.current, t.phase, elapsedMs(t, now), {
+      pathX,
+      strike: t.strike,
+      sweeping: t.sweeping,
+      resetSinceMs: t.rackResetAt === null ? null : now - t.rackResetAt,
+    });
     g.position.set(pose.dx, pose.lift, pose.dz);
     tmpAxis.set(pose.axisX, 0, pose.axisZ);
     g.quaternion.setFromAxisAngle(tmpAxis, pose.angle);
+    // Then the spin of a skidding pin, about the vertical.
+    tmpSpin.setFromAxisAngle(UP, pose.yaw);
+    g.quaternion.premultiply(tmpSpin);
     g.visible = pose.opacity > 0.01;
     material.opacity = pose.opacity;
     material.depthWrite = pose.opacity > 0.98;

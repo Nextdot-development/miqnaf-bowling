@@ -15,11 +15,14 @@ const config: Config = {
     extend: {
       screens: {
         /**
-         * Landscape screens ≥900px wide: fixed full-screen layout (no page
-         * scroll). The floor is low so the 42" panel gets this layout even at
-         * 175–200% Windows scaling (1080p at 200% is a 960×540 viewport).
+         * Landscape screens ≥900px wide and ≥500px tall: fixed full-screen
+         * layout (no page scroll). The floor is low so the 42" panel gets this
+         * layout even at 175–200% Windows scaling (1080p at 200% is a 960×540
+         * viewport); phones turned sideways stay below it.
          */
-        kiosk: { raw: "(min-width: 900px) and (min-aspect-ratio: 4/3)" },
+        kiosk: { raw: "(min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3)" },
+        /** Landscape screens under 500px tall (phones turned sideways): compact pop-ups. */
+        short: { raw: "(max-height: 499px) and (orientation: landscape)" },
       },
       colors: {
         brand: {

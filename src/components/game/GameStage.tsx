@@ -2,13 +2,12 @@
 
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { pinPosition } from "@/lib/laneLayout";
-import { createProjector } from "@/lib/projection";
+import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { DRUGS } from "@/data/gameData";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useWebGLSupport } from "@/hooks/useWebGLSupport";
 import type { DrugId, GamePhase, LanePins, Pin, RollResult } from "@/types/game";
+import type { LanePrompt } from "./SwipeToRoll";
 import { BallLabels } from "./BallLabels";
 import type { BowlingSceneProps } from "./BowlingScene";
 import { LaneFallback2D } from "./LaneFallback2D";
@@ -17,11 +16,6 @@ import { SwipeToRoll } from "./SwipeToRoll";
 
 // Three.js only runs in the browser; keep it out of the server bundle.
 const BowlingScene = dynamic(() => import("./BowlingScene"), { ssr: false });
-
-function rootFontPx(): number {
-  if (typeof window === "undefined") return 16;
-  return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-}
 
 class SceneErrorBoundary extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -37,9 +31,9 @@ class SceneErrorBoundary extends Component<{ onError: () => void; children: Reac
 }
 
 const COUNTER_STYLE: Record<DrugId, string> = {
-  azithromycin: "bg-brand-red text-white",
-  amoxclav: "bg-brand-navy text-white",
-  nafithromycin: "bg-brand-gold text-brand-navy",
+  amoxiclavAzithro: "bg-brand-red text-white",
+  amoxiclavClarithro: "bg-brand-navy text-white",
+  miqnaf: "bg-brand-gold text-brand-navy",
 };
 
 interface GameStageProps {
@@ -47,6 +41,16 @@ interface GameStageProps {
   selectedDrug: DrugId | null;
   result: RollResult | null;
   rollStartedAt: number | null;
+  /** Fixes the ball's curved line (shared by both throws of a session). */
+  lineSeed?: number | null;
+  /** The first throw's ball: fixes the line through the rack (shared by both throws). */
+  lineDrug?: DrugId | null;
+  /** When the transition's rack reset started, if it has. */
+  rackResetAt?: number | null;
+  /** Which frame is rolling ("Frame 1"), shown on the rolling banner. */
+  roller?: string;
+  /** Card at the top of the lane before a roll (the question, or Round 2's ball). */
+  prompt?: LanePrompt;
   interactive: boolean;
   pinName: (pin: Pin) => string;
   onPinSelect: (pin: Pin) => void;
@@ -71,6 +75,11 @@ export function GameStage({
   selectedDrug,
   result,
   rollStartedAt,
+  lineSeed = null,
+  lineDrug = null,
+  rackResetAt = null,
+  roller,
+  prompt,
   interactive,
   pinName,
   onPinSelect,
@@ -87,16 +96,9 @@ export function GameStage({
   const [sceneFailed, setSceneFailed] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const [stageRef, stageSize] = useElementSize<HTMLDivElement>();
-  // When neighbouring pins are too close for full chips, the chips show
-  // numbers only and a key below the lane names them.
-  const compact = useMemo(() => {
-    if (!stageSize.width || !stageSize.height) return false;
-    const project = createProjector(stageSize.width, stageSize.height);
-    const a = pinPosition(2);
-    const b = pinPosition(3);
-    const spacing = Math.abs(project(b.x, 0, b.z).x - project(a.x, 0, a.z).x);
-    return spacing < 4.8 * rootFontPx();
-  }, [stageSize.width, stageSize.height]);
+  // The tags on the lane show the pin number only; the full wording is in the
+  // pin list beside the lane (and in each pin card).
+  const compact = true;
   const aimRef = useRef(0);
   const [aiming, setAiming] = useState(false);
   // A fresh lane (new ball picked, or back to selecting) starts at the foul line.
@@ -113,6 +115,9 @@ export function GameStage({
     ballDrug: selectedDrug,
     lane,
     rollStartedAt,
+    lineSeed,
+    lineDrug,
+    rackResetAt,
     interactive,
     onPinSelect,
     onContextLost: handleFail,
@@ -129,7 +134,7 @@ export function GameStage({
     >
       {/* 2D lane: the no-WebGL fallback, and the placeholder while 3D loads. */}
       {(!use3D || !sceneReady) && (
-        <LaneFallback2D phase={phase} ballDrug={selectedDrug} lane={lane} rollStartedAt={rollStartedAt} />
+        <LaneFallback2D phase={phase} ballDrug={selectedDrug} lane={lane} rollStartedAt={rollStartedAt} lineSeed={lineSeed} lineDrug={lineDrug} rackResetAt={rackResetAt} />
       )}
       {use3D && (
         <SceneErrorBoundary onError={handleFail}>
@@ -142,6 +147,7 @@ export function GameStage({
       {showLabels && (
         <PinLabelsOverlay
           phase={phase}
+          compact={compact}
           lane={lane}
           interactive={interactive}
           pinName={pinName}
@@ -160,6 +166,7 @@ export function GameStage({
           aimRef={aimRef}
           onAimingChange={setAiming}
           onRoll={onRoll}
+          prompt={prompt}
         />
       )}
 
@@ -203,7 +210,7 @@ export function GameStage({
             className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full bg-ink/80 px-8 py-2.5 text-lg font-bold text-white sm:bottom-6 sm:text-xl"
             aria-hidden
           >
-            Rolling {DRUGS[selectedDrug].name}…
+            {roller ? `${roller} · ` : ""}Rolling {DRUGS[selectedDrug].name}…
           </motion.p>
         )}
       </AnimatePresence>

@@ -2,9 +2,9 @@ import { BRAND } from "@/lib/brand";
 import type { DrugId } from "@/types/game";
 
 export const BALL_COLORS: Readonly<Record<DrugId, string>> = {
-  azithromycin: BRAND.red,
-  amoxclav: BRAND.navy,
-  nafithromycin: BRAND.gold,
+  amoxiclavAzithro: BRAND.red,
+  amoxiclavClarithro: BRAND.navy,
+  miqnaf: BRAND.gold,
 };
 
 /** Ball colour before any drug is selected. */

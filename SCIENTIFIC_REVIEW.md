@@ -1,94 +1,56 @@
-# Scientific and regulatory review
+# Scientific and regulatory review: CABP Challenge
 
 **Status: DRAFT. Not approved for release.**
 
-All scientific copy in this build is supplied draft content. It must be checked by scientific/medical review and by regulatory before the game is used at an event. Nothing in this repository has been independently verified by the developers.
+Every scientific, comparative and promotional statement in this build is supplied draft copy. It must be checked by medical/scientific review and by regulatory before the game is used at an event. The developers have not corrected, validated or expanded any claim; discrepancies are recorded below for a decision by the authorised medical/regulatory team.
 
-All copy lives in two files, so reviewers only need to check these:
+All content lives in one file, so reviewers only need to check it:
 
-- [`src/data/gameData.ts`](src/data/gameData.ts): balls, pin wording and short labels, outcome matrix, pre-roll question, footer and disclaimer
-- [`src/data/prompts.ts`](src/data/prompts.ts): the four discussion prompts
+- [`src/data/gameData.ts`](src/data/gameData.ts): titles, therapy choice, the ten barrier pins, every pin outcome, all scores, every message, the closing copy, footer and disclaimer.
 
-## 1. References (pending verification)
+## 1. Items pending approval
 
-The supplied brief lists these sources. None has been checked against the statements below.
+| # | Item | As built (from the supplied brief) | Check |
+|---|---|---|---|
+| 1 | The ten treatment-barrier labels and their clinical interpretation | 1 Susceptibility Vs CABP Pathogens · 2 Bactericidal Activity · 3 Patient Compliance · 4 GI Side Effects · 5 QT Prolongation · 6 Atypical Coverage · 7 Anti-Inflammatory / Immunomodulatory Activity · 8 Managing AMR · 9 Lower Drug-Drug Interaction · 10 Potency. Pin numbers follow the bowling rack (1 = head pin). Knocking a pin down means the therapy overcomes that barrier; whether, for example, knocking down "GI Side Effects" or "QT Prolongation" reads correctly needs confirmation | ☐ |
+| 2 | Short lane tags (written by the developers to fit the 3D lane) | Susceptibility, Bactericidal, Compliance, GI side effects, QT prolongation, Atypicals, Anti-inflam., AMR, Lower DDI, Potency. Full wording is always in the pin list and pin cards | ☐ |
+| 3 | Scenario A first throw (Amoxi-Clav + Azithromycin) | Down: Bactericidal Activity, Anti-Inflammatory / Immunomodulatory Activity, Atypical Coverage, Lower Drug-Drug Interaction. Shaking: Susceptibility Vs CABP Pathogens. Standing: QT Prolongation, Patient Compliance, GI Side Effects, Managing AMR, Potency. Score 4.5/10 | ☐ |
+| 4 | Scenario B first throw (Amoxi-Clav + Clarithromycin) | As Scenario A, plus Potency down. Score 5.5/10 | ☐ |
+| 5 | **Basis for Scenario B's 5.5/10** | No formula supplied. It matches 5 pins down plus 0.5 for the shaking pin, and Scenario A's 4.5/10 matches the same reading; this is an observation, not an implemented rule. Scores are configured values, never calculated | ☐ confirm basis |
+| 6 | Second-attempt behaviour | Same ball; the therapy cannot be changed; every standing pin shakes but none falls (no second-attempt outcome supplied) | ☐ |
+| 7 | **Scenario A: 4.5/10 first throw vs 5.5/10 transition score** | The brief gives 5.5/10 on the transition and the scorecard for both scenarios, although Scenario A's second throw knocks nothing down. Built as supplied, as configured draft values (`FRAME_1_SCORE` in `gameData.ts`). On 2026-10-27 the client indicated 4.5/10 was intended for Scenario A; the later written brief says 5.5/10. **Needs a decision**; changing it is one value | ☐ decide |
+| 8 | Claim that all ten barriers fall in the MIQNAF® round | Frame 2: all 10 down, "STRIKE!", "All 10 Pins Down", score 10/10 | ☐ |
+| 9 | Frame 2 down-pin list wording | The brief's Frame 2 list shortens two names ("Bactericidal", "Anti-Inflammatory Activity"). The game shows the full Frame 1 wording for the same pins, so the rack is consistent | ☐ confirm |
+| 10 | Comparative statements | "Conventional Therapy vs Novel Therapy"; "How effective is your preferred conventional treatment strategy at knocking down these barriers?"; "Despite two attempts, several CABP treatment barriers are still standing."; "Let's see how a novel therapy performs."; the scorecard (Conventional Therapy vs MIQNAF®) | ☐ |
+| 11 | Promotional statement (closing screen) | "MIQNAF® is designed to overcome resistance and deliver compliance with a superior profile." | ☐ |
+| 12 | Prescribing-oriented call to action (closing screen) | "Please use MIQNAF® to secure maximum therapeutic benefit for your CABP patients." | ☐ |
+| 13 | "Why MIQNAF® Changes the Game" | Not shown. The brief refers to three Google Drawings images per scenario; no links or image files were supplied with the brief, so they could not be accessed. The section appears once approved content is configured (`WHY_MIQNAF`). No substitute diagrams were created | ☐ supply approved assets |
+| 14 | Scientific disclaimer wording | Footer, every screen (two lines; see section 2) | ☐ |
+| 15 | Welcome copy | "CABP Challenge", "Conventional Therapy vs Novel Therapy", "Knock down the barriers" | ☐ |
+| 16 | Ball descriptions (developer-written, used for screen readers) | "Amoxicillin/clavulanate with azithromycin.", "Amoxicillin/clavulanate with clarithromycin.", "MIQNAF® (nafithromycin)." Ball class labels "Conventional therapy" / "Novel therapy" | ☐ |
+| 17 | Emoji in the brief | "🏆 MIQNAF®" and "STRIKE! 🎳" are shown without the emoji (they render inconsistently on kiosk browsers, and an earlier brief asked for no trophies) | ☐ confirm |
 
-| # | Source | Status |
-|---|--------|--------|
-| 1 | https://pmc.ncbi.nlm.nih.gov/articles/PMC5700335 | ☐ Pending verification |
-| 2 | https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9549737/ | ☐ Pending verification |
-| 3 | https://pmc.ncbi.nlm.nih.gov/articles/PMC6879255 | ☐ Pending verification |
-| 4 | https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12494923/ | ☐ Pending verification |
+## 2. Regulatory items
 
-For each reference, the reviewer should confirm which statement(s) it supports and record any discrepancy in section 5. **Do not change supplied wording in code to resolve a discrepancy.** Record it here for a human decision.
-
-## 2. Statements to verify
-
-The pins are the attributes a CABP treatment should cover (client brief, revised). Wording below is as supplied, with spelling corrected.
-
-| Location | Statement | Check |
-|---|---|---|
-| Pre-roll question | "Which options would you choose to knock off all the pins for treatment of CABP?" (supplied "knockoff", corrected to "knock off") | ☐ |
-| Pin 1 | "MDR *S. pneumoniae* coverage" (supplied "S.Pnemoniae") | ☐ |
-| Pin 2 | "Atypical coverage" | ☐ |
-| Pin 3 | "Safety for paediatric and elderly" | ☐ |
-| Pin 4 | "High lung levels" | ☐ |
-| Pin 5 | "Bactericidal actions" | ☐ |
-| Pin 6 | "PK/PD supporting short course therapy" | ☐ |
-| Pin 7 | "Anti-inflammatory activity" | ☐ |
-| Pin 8 | "Monotherapy" | ☐ |
-| Short lane labels | MDR Spn, Atypicals, Safety, Lung levels, Bactericidal, Short course, Anti-inflam., Monotherapy (written by the developers to fit the lane tags; not supplied) | ☐ |
-| Azithromycin result | Down: atypical coverage, safety, high lung levels, anti-inflammatory activity (4 of 8). Standing: 1, 5, 6, 8 | ☐ |
-| Amox/clav result | Down: safety, bactericidal actions (2 of 8). Standing: 1, 2, 4, 6, 7, 8. **Discrepancy:** the brief says "(50% Down)", but 2 of 8 pins is 25%. Confirm which pins should fall | ☐ |
-| Nafithromycin result | All 8 pins down | ☐ approved as a teaching model |
-| Amox/clav ball | Name "Amox/clav", class "β-lactam/β-lactamase inhibitor", description "Amoxicillin with clavulanate, a β-lactamase inhibitor." (class and description written by the developers) | ☐ |
-| Azithromycin card | "Macrolide approved in 1988. Resistance in pneumococci is high in several regions." | ☐ approval year |
-| Nafithromycin card | "Designed for macrolide-resistant pneumococci. 3-day, once-daily course." | ☐ regimen vs prescribing information |
-
-### Two-round scenarios (client brief, Scenario Design)
-
-| Location | Statement | Check |
-|---|---|---|
-| Round 1, Azithromycin | Message: "Good coverage, but some critical respiratory challenges remain." Evidence paragraph (Paukner S et al., 2024; Berbel D et al., 2022; ICMR 65%) | ☐ message ☐ 63% / 57% / 0-1% ☐ 16–50%, 90%, 5.7% ☐ ICMR 65% |
-| Round 1, Amox/clav | Message: "Not all respiratory challenges have been addressed." Evidence paragraph (Paukner S et al., 2024; Murphy ME et al., 2021; Nayar S et al., 2019; Owens RC Jr, 2008) | ☐ message ☐ >20% ☐ ~10% hypersensitivity ☐ paragraph opens with "They" (β-lactams), as supplied |
-| Strike, round 1 Nafithromycin | "You have won the game" (heading; the brief's "STRIKE!" heading removed at client request) · "All 8 pins down in a single throw." · "One Molecule. Multiple Respiratory Challenges Addressed." plus the Nafithromycin evidence paragraph | ☐ **Changed:** the brief says "All 7 pins"; the game keeps 8 pins (client decision), so the line reads "All 8 pins" |
-| Strike, round 2 after Azithromycin | "Perfect Strike Through Comprehensive Coverage" plus the Nafithromycin evidence paragraph | ☐ evidence also shown here (the brief gives it under Scenario 3 only) |
-| Strike, round 2 after Amox/clav | "All pins down" plus the Nafithromycin evidence paragraph | ☐ as above |
-| Round 2 miss, Azithromycin then Amox/clav | "One additional pin down. Some critical challenges remain unresolved." Amox/clav only wobbles Bactericidal actions in round 2 (client decision), so no new pin falls: 4 of 8 down; 1, 5, 6, 8 standing. **The message says "One additional pin down" but none falls**: reword, e.g. "Some critical challenges remain unresolved." | ☐ message wording |
-| Round 2 miss, Amox/clav then Azithromycin | "Some pins still standing" (4 of 8 down; 1, 5, 6, 8 standing) | ☐ |
-| Azithromycin remaining pins | The brief lists 3 (MDR *S. pneumoniae*, Bactericidal, Short course). With 8 pins Monotherapy also stands, so the pop-up lists 4 | ☐ |
-| Wobble rule | Amox/clav half-knocks Bactericidal actions ("50% down"): it rocks and stays up, in round 1 and round 2 | ☐ approved as a teaching model |
-| Corrections to supplied text | "S. pneumonie" corrected to *S. pneumoniae*; species and gene names set in italics | ☐ |
-
-## 3. Content gaps (placeholders in the build)
-
-- **"Why it matters in CABP"** (pin card, all 8 pins): no copy supplied. The card shows "Approved copy pending scientific review." Supply text in `whyItMatters` in `gameData.ts`, or approve leaving it out.
-- **Basis / evidence lines**: the previous bacteria pins had supplied basis lines; the new attribute pins have none, so the card shows only the pin wording. Supply evidence lines per pin if wanted.
-- **Discussion prompts** (`src/data/prompts.ts`): not shown anywhere in the game, and still written for the old bacteria pins. Update or remove.
-- **Original blueprint**: `Nafithromycin_CABP_Bowling_Game_Blueprint.docx` was not available when this was built. Content was taken from the build brief. Compare against the blueprint and record differences in section 5.
-
-## 4. Regulatory items
-
-- ☐ **Footer** (every screen, two lines): final wording set by regulatory. Line 1: "For scientific discussion among healthcare professionals. Pin outcomes are a teaching model built from published in vitro and clinical data. They do not replace the prescribing information, local antibiograms or clinical judgement." Line 2: "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company."
-- ☐ **Intro tagline**: "Roll the right ball. Break the barriers." Promotional wording pending approval.
-- ☐ **Pre-roll question** (shown on the lane while choosing a ball): "Which of these macrolides will be effective against the pinned bacteria?" Note: nafithromycin is a lactone ketolide, not strictly a macrolide; confirm the wording (e.g. "Which of these balls" or "macrolides and ketolides").
-- ☐ **Game title**: "CABP Bowling Challenge".
-- ☐ **Logo**: the Wockhardt Respiratory logo (supplied artwork) appears in the header and on the intro screen, and its red "W" is the browser icon. The MIQNAF® logo ("Nafithromycin tablet 400 mg") appears only on the end pop-ups: "You have won the game / Thank you for playing" and "Unfortunately pins are still up / Thanks for attempting". Confirm placement, and that showing it next to the comparator content is acceptable.
-- ☐ **Sound effects**: `public/soundeffects/` holds two recordings named `freesound_community-…` (bowling ball roll, bowling strike). Confirm their licence covers use at the event and whether attribution is needed.
-- ☐ **End-of-game sounds**: the win (confetti pops and a rising chime) and lose (soft descending "wah-wah") sounds are generated in code, not recordings, so no licence applies. Confirm the lose sound suits the event.
-- ☐ **Sound on by default**: the original brief asked for sound OFF by default; the client asked for it ON. Audio still only starts after the first tap, and the header switch turns it off.
+- ☐ **Footer** (every screen, two lines): Line 1: "For scientific discussion among healthcare professionals. Pin outcomes are a teaching model built from published in vitro and clinical data. They do not replace the prescribing information, local antibiograms or clinical judgement." Line 2: "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company." Confirm both still fit a promotional comparison with a prescribing call to action.
+- ☐ **Logo**: the Wockhardt Respiratory logo appears in the header and on the welcome screen; its red "W" is the browser icon. The MIQNAF® logo appears only on the result pop-ups (Frame 1 "Good attempt!", Frame 2 "STRIKE!") and the scorecard, as the client asked.
+- ☐ **Doctor's name**: required; used only in "Hi Dr. [Name]," the scorecard and the closing screen; kept for the session only, never stored or sent anywhere; shown as plain text. A leading "Dr." typed by the doctor is dropped so the greeting does not repeat it.
+- ☐ **Sound on by default**: the brief says OFF by default; the client asked for ON (twice). Audio only starts after the first tap, and the header switch turns it off.
+- ☐ **Sound effects**: `public/soundeffects/` holds two recordings named `freesound_community-…` (ball roll, strike). Confirm the licence covers use at the event. The win chime and soft "wah-wah" after the first throw are generated in code.
 - ☐ **Fonts**: confirm the Acumin and Helvetica Neue licences cover embedding in this web/kiosk build.
 - ☐ **Ball colours**: interface identifiers only (brand palette). Confirm they do not imply potency.
 
-## 5. Discrepancies log
+## 3. Discrepancies log
 
 | Date | Item | Observed discrepancy | Reviewer | Decision |
 |------|------|----------------------|----------|----------|
-| 2026-10-23 | Pin 2 and pin 3 standing reasons | Supplied copy used an em dash ("mef(A) efflux [em dash] macrolide resistance."). At the client's request the UI uses no em dashes, so it now reads "mef(A) efflux, macrolide resistance." (pin 3 likewise). Wording otherwise unchanged. | | Pending approval |
+| 2026-10-27 | Scenario A score | 4.5/10 after the first throw; 5.5/10 on the transition and scorecard though the second throw knocks nothing down (item 7) | | Pending |
+| 2026-10-27 | Frame 2 pin names | Shortened names in the brief's Frame 2 list (item 9) | | Pending |
+| 2026-10-27 | Sound default | Brief: off; client: on | | Built ON per client |
 
 ## Sign-off
 
 | Role | Name | Date |
 |------|------|------|
-| Scientific / medical review | | |
+| Medical / scientific review | | |
 | Regulatory | | |

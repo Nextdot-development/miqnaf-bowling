@@ -1,5 +1,24 @@
-import { DRUGS, PINS } from "@/data/gameData";
+import { PINS } from "@/data/gameData";
 import type { DrugId, LanePin, LanePins, Pin, PinNumber, PinStatus, RichText } from "@/types/game";
+
+/** Longest name accepted on the name screen. */
+export const MAX_NAME_LENGTH = 40;
+
+/**
+ * The doctor's name as typed, tidied for "Hello Dr. [Name],": trimmed, spaces
+ * collapsed, any "Dr"/"Dr." the doctor typed dropped (the greeting adds it),
+ * capped in length. Empty when there is no name (letters required). It is
+ * only ever rendered as text, never as HTML.
+ */
+export function cleanDoctorName(raw: string): string {
+  const name = raw
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^dr\.?\s+/i, "")
+    .slice(0, MAX_NAME_LENGTH)
+    .trim();
+  return /\p{L}/u.test(name) ? name : "";
+}
 
 export const TOTAL_PINS = PINS.length;
 
@@ -17,7 +36,7 @@ export function downPins(drug: DrugId): PinNumber[] {
   return PINS.filter((p) => p.outcome[drug] === "down").map((p) => p.number);
 }
 
-/** Pins still up after the roll, including any that only wobbled. */
+/** Pins still up after the first throw, including any that only shook. */
 export function standingPins(drug: DrugId): PinNumber[] {
   return PINS.filter((p) => p.outcome[drug] !== "down").map((p) => p.number);
 }
@@ -45,31 +64,44 @@ export function hasDistinctLabel(pin: Pin): boolean {
   return pin.label !== richToPlain(pin.name);
 }
 
-/** The lane before a throw: pins cleared after round 1 are gone, the rest are up. */
-export function laneBefore(cleared: readonly PinNumber[]): LanePins {
-  return Object.fromEntries(PINS.map((p) => [p.number, cleared.includes(p.number) ? "cleared" : "up"])) as Record<PinNumber, LanePin>;
+/** A full rack, every pin up (before each throw). */
+export function laneBefore(): LanePins {
+  return Object.fromEntries(PINS.map((p) => [p.number, "up"])) as Record<PinNumber, LanePin>;
 }
 
 /**
- * Every pin's state after throwing `drug`. Pins cleared after round 1 stay
- * cleared. A half-knocked pin only ever wobbles, in either round (amox/clav
- * on Bactericidal actions), so it is still up afterwards.
+ * Every pin's state after throwing `drug` at a full rack. The shaking pin
+ * (Susceptibility, for both conventional combinations) only wobbles, so it is still up.
  */
-export function rollLane(drug: DrugId, cleared: readonly PinNumber[]): LanePins {
+export function rollLane(drug: DrugId): LanePins {
   return Object.fromEntries(
     PINS.map((p) => {
-      if (cleared.includes(p.number)) return [p.number, "cleared"];
       const status = p.outcome[drug];
-      if (status === "down") return [p.number, "down"];
-      return [p.number, status === "wobble" ? "wobble" : "up"];
+      return [p.number, status === "down" ? "down" : status === "wobble" ? "wobble" : "up"];
     }),
   ) as Record<PinNumber, LanePin>;
 }
 
 export function laneDown(lane: LanePins): PinNumber[] {
-  return PINS.filter((p) => lane[p.number] === "down" || lane[p.number] === "cleared").map((p) => p.number);
+  return PINS.filter((p) => lane[p.number] === "down").map((p) => p.number);
 }
 
 export function laneStanding(lane: LanePins): PinNumber[] {
   return PINS.filter((p) => lane[p.number] === "up" || lane[p.number] === "wobble").map((p) => p.number);
+}
+
+/**
+ * The same ball thrown again at what the first throw left: the pins it
+ * knocked down are gone, and every pin still up shakes but stays up. No pin
+ * falls on a second throw unless an approved outcome is configured.
+ */
+export function secondThrowLane(first: LanePins): LanePins {
+  return Object.fromEntries(
+    PINS.map((p) => [p.number, first[p.number] === "down" || first[p.number] === "gone" ? "gone" : "wobble"]),
+  ) as Record<PinNumber, LanePin>;
+}
+
+/** Pins knocked down in the frame so far (down now, or cleared by an earlier throw). */
+export function laneCleared(lane: LanePins): PinNumber[] {
+  return PINS.filter((p) => lane[p.number] === "down" || lane[p.number] === "gone").map((p) => p.number);
 }

@@ -8,17 +8,10 @@ interface PinKeyProps {
   onOpenPin: (n: PinNumber) => void;
   /** Rows can't be tapped while the ball is rolling. */
   disabled?: boolean;
-  /** Pins knocked down in round 1 (shown struck through). */
-  cleared?: readonly PinNumber[];
   className?: string;
 }
 
-/**
- * Pin key: each pin's number, short label and full wording. Each row
- * opens that pin's card. On the kiosk it sits over the right edge of
- * the lane, opposite the ball rack; on smaller screens it is a card under it.
- */
-export function PinKey({ onOpenPin, disabled = false, cleared = [], className = "" }: PinKeyProps) {
+export function PinKey({ onOpenPin, disabled = false, className = "" }: PinKeyProps) {
   return (
     <section
       aria-labelledby="pin-key-heading"
@@ -35,10 +28,9 @@ export function PinKey({ onOpenPin, disabled = false, cleared = [], className = 
               onClick={() => onOpenPin(p.number)}
               disabled={disabled}
               aria-label={`Card for pin ${p.number}, ${p.label}: ${richToPlain(p.name)}`}
-              data-cleared={cleared.includes(p.number) || undefined}
-              className="group flex w-full data-[cleared]:opacity-50 data-[cleared]:[&_span:last-child]:line-through items-center gap-2.5 rounded-xl text-left leading-tight transition-colors enabled:hover:bg-surface-sunken disabled:cursor-default kiosk:bg-black/45 kiosk:px-[0.85rem] kiosk:py-[0.55rem] kiosk:ring-1 kiosk:ring-white/15 kiosk:backdrop-blur-sm kiosk:enabled:hover:bg-black/60 kiosk:enabled:active:bg-brand-navy/80"
+              className="group flex min-h-11 w-full items-center gap-2.5 rounded-xl text-left leading-tight transition-colors kiosk:min-h-0 enabled:hover:bg-surface-sunken disabled:cursor-default kiosk:bg-black/45 kiosk:px-[0.85rem] kiosk:py-[0.55rem] kiosk:ring-1 kiosk:ring-white/15 kiosk:backdrop-blur-sm kiosk:enabled:hover:bg-black/60 kiosk:enabled:active:bg-brand-navy/80"
             >
-              <span className="pin-chip-num shrink-0 kiosk:bg-white kiosk:text-brand-navy">{p.number}</span>
+              <span className="pin-chip-num shrink-0 kiosk:h-[1.55rem] kiosk:min-w-[1.55rem] kiosk:bg-white kiosk:text-[0.9rem] kiosk:text-brand-navy">{p.number}</span>
               <span className="min-w-0 flex-1 text-sm text-ink-muted kiosk:text-[0.95rem] kiosk:text-white/80">
                 {hasDistinctLabel(p) ? (
                   <>

@@ -16,9 +16,17 @@
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
   }
-  @media (min-width: 900px) and (min-aspect-ratio: 4/3) {
+  @media (min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3) {
     html {
       font-size: clamp(6px, min(0.8333vw, 1.4815vh), 36px);
+    }
+  }
+  /* Standard-density screens (laptops and monitors at 100–125% scaling) keep
+     text readable on small viewports. High-density screens, including the
+     kiosk panel at 150–200% Windows scaling, scale freely as above. */
+  @media (min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3) and (max-resolution: 1.49dppx) {
+    html {
+      font-size: clamp(12px, min(0.8333vw, 1.4815vh), 36px);
     }
   }
   body {
@@ -94,6 +102,12 @@
     position: absolute;
     inset: -0.6rem -0.2rem;
   }
+  /* Touch screens: a bigger hit area still, for fingers on small lanes. */
+  @media (pointer: coarse) {
+    .pin-chip::after {
+      inset: -0.75rem -0.6rem;
+    }
+  }
   .pin-chip:active:not(:disabled) {
     transform: scale(0.94);
   }
@@ -114,6 +128,10 @@
   }
   .lane-compact .pin-chip-text {
     display: none;
+  }
+  /* Number-only tags: big enough to read and tap on the kiosk. */
+  .lane-compact .pin-chip-num {
+    @apply h-[2rem] min-w-[2rem] text-[1.05rem];
   }
   @media (max-width: 420px) {
     .lane-compact .pin-chip {

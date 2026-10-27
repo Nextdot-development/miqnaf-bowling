@@ -1,92 +1,99 @@
 import { describe, expect, it } from "vitest";
-import { DRUG_ORDER, DRUGS, PINS, DISCLAIMER, FOOTER_NOTE } from "@/data/gameData";
-import { downPins, pinsDownCount, richToPlain, standingPins, wobbles } from "@/lib/gameLogic";
-import { EXPECTED_LABELS, validateOutcomeMatrix } from "@/lib/outcomeValidation";
+import {
+  CLOSING_COPY,
+  CONVENTIONAL_BALLS,
+  DISCLAIMER,
+  DRUGS,
+  FIRST_THROW_SCORE,
+  FOOTER_NOTE,
+  FRAME_1_SCORE,
+  FRAME_2_SCORE,
+  NOVEL_BALL,
+  PINS,
+  WHY_MIQNAF,
+} from "@/data/gameData";
+import { downPins, pinsDownCount, richToPlain, rollLane, secondThrowLane, standingPins, wobbles } from "@/lib/gameLogic";
+import { FRONT_ROW_Z, pinPosition } from "@/lib/laneLayout";
+import { EXPECTED_NAMES, validateOutcomeMatrix } from "@/lib/outcomeValidation";
+import type { DrugId, PinNumber } from "@/types/game";
+
+const ALL: DrugId[] = ["amoxiclavAzithro", "amoxiclavClarithro", "miqnaf"];
 
 describe("outcome matrix", () => {
   it("passes validation", () => {
     expect(validateOutcomeMatrix()).toEqual([]);
   });
 
-  it("has exactly eight pins with unique numbers 1–8", () => {
-    expect(PINS).toHaveLength(8);
-    expect(new Set(PINS.map((p) => p.number)).size).toBe(8);
-    expect(PINS.map((p) => p.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  it("has exactly ten pins numbered 1–10, with the supplied barrier wording", () => {
+    expect(PINS.map((p) => p.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    for (const pin of PINS) expect(richToPlain(pin.name)).toBe(EXPECTED_NAMES[pin.number]);
+    for (const pin of PINS) expect(pin.label.length).toBeLessThanOrEqual(16); // short enough for the lane tags
   });
 
-  it("uses the agreed short labels", () => {
-    for (const pin of PINS) expect(pin.label).toBe(EXPECTED_LABELS[pin.number]);
-  });
-
-  it("has front row 1–4 and rear row 5–8", () => {
-    expect(PINS.filter((p) => p.row === "front").map((p) => p.number)).toEqual([1, 2, 3, 4]);
-    expect(PINS.filter((p) => p.row === "rear").map((p) => p.number)).toEqual([5, 6, 7, 8]);
+  it("racks the ten pins in a full triangle pointing at the bowler", () => {
+    const pos = (n: PinNumber) => pinPosition(n);
+    expect(pos(1)).toMatchObject({ x: 0, z: FRONT_ROW_Z });
+    const rows = [[1], [2, 3], [4, 5, 6], [7, 8, 9, 10]] as PinNumber[][];
+    for (let r = 1; r < rows.length; r++) {
+      expect(pos(rows[r]![0]!).z).toBeLessThan(pos(rows[r - 1]![0]!).z);
+      for (const n of rows[r]!) expect(pos(n).z).toBeCloseTo(pos(rows[r]![0]!).z, 9);
+    }
+    for (const [l, r] of [[2, 3], [4, 6], [7, 10], [8, 9]] as [PinNumber, PinNumber][]) expect(pos(l).x).toBeCloseTo(-pos(r).x, 9);
   });
 
   it.each([
-    ["azithromycin", 4, [1, 5, 6, 8]],
-    ["amoxclav", 1, [1, 2, 4, 5, 6, 7, 8]],
-    ["nafithromycin", 8, []],
-  ] as const)("%s knocks down %i of 8 and leaves %j standing", (drug, down, standing) => {
-    expect(pinsDownCount(drug)).toBe(down);
-    expect(standingPins(drug)).toEqual(standing);
-    expect(downPins(drug).length + standingPins(drug).length).toBe(8);
+    ["amoxiclavAzithro", [2, 6, 7, 9], [1], [3, 4, 5, 8, 10]],
+    ["amoxiclavClarithro", [2, 6, 7, 9, 10], [1], [3, 4, 5, 8]],
+    ["miqnaf", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [], []],
+  ] as const)("%s: down %j, shaking %j, standing %j (as supplied)", (drug, down, shaking, standing) => {
+    expect(downPins(drug)).toEqual(down);
+    expect(PINS.filter((p) => wobbles(drug, p.number)).map((p) => p.number)).toEqual(shaking);
+    expect(standingPins(drug).filter((n) => !wobbles(drug, n))).toEqual(standing);
+    expect(pinsDownCount(drug) + standingPins(drug).length).toBe(10);
   });
 
-  it("only amox/clav half-knocks a pin, and only Bactericidal actions", () => {
-    const half = PINS.flatMap((p) => DRUG_ORDER.filter((d) => wobbles(d, p.number)).map((d) => `${d}:${p.number}`));
-    expect(half).toEqual(["amoxclav:5"]);
-  });
-
-  it("matches the supplied list cell by cell (azithromycin, amox/clav, nafithromycin)", () => {
-    const table: Record<number, [string, string, string]> = {
-      1: ["standing", "standing", "down"], // MDR S. pneumoniae coverage
-      2: ["down", "standing", "down"], // Atypical coverage
-      3: ["down", "down", "down"], // Safety for paediatric and elderly
-      4: ["down", "standing", "down"], // High lung levels
-      5: ["standing", "wobble", "down"], // Bactericidal actions: amox/clav "50% down", rocks but stays up
-      6: ["standing", "standing", "down"], // PK/PD supporting short course therapy
-      7: ["down", "standing", "down"], // Anti-inflammatory activity
-      8: ["standing", "standing", "down"], // Monotherapy
-    };
-    for (const pin of PINS) {
-      expect(DRUG_ORDER.map((d) => pin.outcome[d])).toEqual(table[pin.number]);
+  it("the second throw knocks nothing more down: cleared pins stay gone, the rest only shake", () => {
+    for (const drug of CONVENTIONAL_BALLS) {
+      const first = rollLane(drug);
+      const second = secondThrowLane(first);
+      for (const pin of PINS) {
+        expect(second[pin.number]).toBe(first[pin.number] === "down" ? "gone" : "wobble");
+      }
     }
   });
 });
 
-describe("supplied copy", () => {
-  it("keeps ball cards verbatim", () => {
-    expect(DRUGS.azithromycin).toMatchObject({
-      drugClass: "Azalide macrolide",
-      description: "Macrolide approved in 1988. Resistance in pneumococci is high in several regions.",
-    });
-    expect(DRUGS.amoxclav).toMatchObject({ name: "Amox/clav", drugClass: "β-lactam/β-lactamase inhibitor" });
-    expect(DRUGS.nafithromycin).toMatchObject({
-      drugClass: "Lactone ketolide",
-      description: "Designed for macrolide-resistant pneumococci. 3-day, once-daily course.",
-    });
+describe("configuration", () => {
+  it("offers exactly the two conventional combinations, and presents MIQNAF® for Frame 2", () => {
+    expect(CONVENTIONAL_BALLS.map((d) => DRUGS[d].name)).toEqual(["Amoxi-Clav + Azithromycin", "Amoxi-Clav + Clarithromycin"]);
+    expect(NOVEL_BALL).toBe("miqnaf");
+    expect(DRUGS.miqnaf).toMatchObject({ name: "MIQNAF®", fullName: "Nafithromycin" });
+    expect(ALL).toEqual(Object.keys(DRUGS));
   });
 
-  it("keeps both footer texts verbatim", () => {
+  it("uses the supplied scores as configured values (draft)", () => {
+    expect(FIRST_THROW_SCORE.amoxiclavAzithro).toBe(4.5);
+    expect(FIRST_THROW_SCORE.amoxiclavClarithro).toBe(5.5);
+    expect(FRAME_1_SCORE.amoxiclavAzithro).toBe(5.5); // supplied transition score; differs from 4.5 (pending review)
+    expect(FRAME_1_SCORE.amoxiclavClarithro).toBe(5.5);
+    expect(FRAME_2_SCORE).toBe(10);
+  });
+
+  it("hides 'Why MIQNAF® Changes the Game' until approved content is supplied", () => {
+    expect(WHY_MIQNAF).toBeNull();
+  });
+
+  it("keeps the supplied closing copy and both footer texts verbatim", () => {
+    expect(CLOSING_COPY.lines).toEqual([
+      "Thank you for participating in the CABP Challenge!",
+      "MIQNAF® is designed to overcome resistance and deliver compliance with a superior profile.",
+      "Please use MIQNAF® to secure maximum therapeutic benefit for your CABP patients.",
+    ]);
     expect(FOOTER_NOTE).toBe(
       "For scientific discussion among healthcare professionals. Pin outcomes are a teaching model built from published in vitro and clinical data. They do not replace the prescribing information, local antibiograms or clinical judgement.",
     );
     expect(DISCLAIMER).toBe(
       "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company.",
     );
-  });
-
-  it("uses the supplied pin wording", () => {
-    expect(PINS.map((p) => richToPlain(p.name))).toEqual([
-      "MDR S. pneumoniae coverage",
-      "Atypical coverage",
-      "Safety for paediatric and elderly",
-      "High lung levels",
-      "Bactericidal actions",
-      "PK/PD supporting short course therapy",
-      "Anti-inflammatory activity",
-      "Monotherapy",
-    ]);
   });
 });

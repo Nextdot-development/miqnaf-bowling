@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { DRUG_ORDER, PINS } from "@/data/gameData";
+import { CONVENTIONAL_BALLS, DRUGS, PINS } from "@/data/gameData";
 import { SCENE } from "@/lib/brand";
 import { BALL_COLORS, ballColor } from "@/lib/drugVisuals";
 import {
@@ -20,7 +20,7 @@ import {
   pinPosition,
 } from "@/lib/laneLayout";
 import { createProjector, type Projector } from "@/lib/projection";
-import { ballPose, fallDirection, pinPose } from "@/lib/rollAnimation";
+import { ballLineFor, ballPose, fallDirection, lanePinPose, rackLineX, STRAIGHT_LINE } from "@/lib/rollAnimation";
 import { useElementSize } from "@/hooks/useElementSize";
 import type { BowlingSceneProps } from "./BowlingScene";
 
@@ -50,13 +50,16 @@ function BallGlyph({ gradientId }: { gradientId: string }) {
   );
 }
 
-type FallbackProps = Pick<BowlingSceneProps, "phase" | "ballDrug" | "lane" | "rollStartedAt">;
+type FallbackProps = Pick<BowlingSceneProps, "phase" | "ballDrug" | "lane" | "rollStartedAt" | "lineSeed" | "lineDrug" | "rackResetAt">;
 
 export function LaneFallback2D({
   phase,
   ballDrug,
   lane,
   rollStartedAt,
+  lineSeed,
+  lineDrug,
+  rackResetAt = null,
 }: FallbackProps) {
   const [ref, { width, height }] = useElementSize<HTMLDivElement>();
   const ballRef = useRef<SVGGElement>(null);
@@ -64,7 +67,7 @@ export function LaneFallback2D({
 
   const project = useMemo(() => (width && height ? createProjector(width, height) : null), [width, height]);
 
-  const falls = (n: (typeof PINS)[number]["number"]) => lane[n] === "down";
+  const falls = (n: (typeof PINS)[number]["number"]) => lane[n] === "down" || lane[n] === "gone";
 
   // Frame loop: writes SVG attributes directly, no React renders per frame.
   useEffect(() => {
@@ -72,13 +75,14 @@ export function LaneFallback2D({
     let raf = 0;
     const draw = () => {
       const elapsed =
-        phase === "result"
+        phase === "result" || phase === "transition" || phase === "scorecard" || phase === "closing"
           ? Number.POSITIVE_INFINITY
           : phase === "rolling" && rollStartedAt !== null
             ? performance.now() - rollStartedAt
             : 0;
 
-      const b = ballPose(elapsed);
+      const b = ballPose(elapsed, lineSeed === null ? STRAIGHT_LINE : ballLineFor(lineSeed, lineDrug));
+      const pathX = lineDrug ? rackLineX(lineDrug) : 0;
       const bc = project(b.x, b.y, b.z);
       const br = Math.abs(project(b.x, b.y + BALL_RADIUS, b.z).y - bc.y);
       if (ballRef.current) {
@@ -90,24 +94,29 @@ export function LaneFallback2D({
         const g = pinRefs.current[i];
         if (!g) return;
         const { x, z } = pinPosition(pin.number);
-        const wobble = lane[pin.number] === "wobble";
-        const pose = pinPose(pin.number, falls(pin.number), elapsed, wobble);
+        const now = performance.now();
+        const pose = lanePinPose(pin.number, lane[pin.number], phase, elapsed, {
+          pathX,
+          strike: Object.values(lane).every((s) => s === "down"),
+          sweeping: false,
+          resetSinceMs: rackResetAt === null ? null : now - rackResetAt,
+        });
         const base = project(x + pose.dx, 0, z + pose.dz);
-        const dir = fallDirection(pin.number);
+        const dir = fallDirection(pin.number, pathX);
         const rot = (pose.angle * 180) / Math.PI * (pose.dim > 0 || !falls(pin.number) ? 1 : dir.x);
         const squash = 1 - 0.7 * Math.sin(pose.angle) * Math.abs(dir.z) * (falls(pin.number) ? 1 : 0);
         g.setAttribute("transform", `translate(${base.x} ${base.y}) rotate(${rot.toFixed(2)}) scale(1 ${squash.toFixed(3)})`);
-        // Cleared after round 1: gone from the lane.
-        g.style.opacity = lane[pin.number] === "cleared" ? "0" : String(pose.opacity);
+        // Down, or cleared by an earlier throw: gone from the lane.
+        g.style.opacity = String(pose.opacity);
         g.style.filter = pose.dim > 0 ? `grayscale(1) brightness(${1 - 0.22 * pose.dim})` : "";
       });
 
-      if (phase === "rolling") raf = requestAnimationFrame(draw);
+      if (phase === "rolling" || phase === "transition") raf = requestAnimationFrame(draw);
     };
     draw();
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project, phase, rollStartedAt, lane, ballDrug]);
+  }, [project, phase, rollStartedAt, lineSeed, lineDrug, lane, ballDrug, rackResetAt]);
 
   const color = ballColor(ballDrug);
 
@@ -123,7 +132,7 @@ export function LaneFallback2D({
             </linearGradient>
             {[
               ["ball2d", color],
-              ...DRUG_ORDER.map((id) => [`ball2d-${id}`, BALL_COLORS[id]]),
+              ...(Object.keys(DRUGS) as (keyof typeof DRUGS)[]).map((id) => [`ball2d-${id}`, BALL_COLORS[id]]),
             ].map(([id, fill]) => (
               <radialGradient key={id} id={id} cx="0.35" cy="0.3" r="0.8">
                 <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
@@ -152,10 +161,10 @@ export function LaneFallback2D({
             return <polygon key={i} points={`${tip.x},${tip.y} ${l.x},${l.y} ${r.x},${r.y}`} fill="#86552a" />;
           })}
 
-          {/* Rear row first so the front row overlaps it. */}
+          {/* Farthest pins first so nearer ones overlap them. */}
           {[...PINS]
             .map((pin, i) => ({ pin, i }))
-            .sort((a, b) => (a.pin.row === b.pin.row ? 0 : a.pin.row === "rear" ? -1 : 1))
+            .sort((a, b) => pinPosition(a.pin.number).z - pinPosition(b.pin.number).z)
             .map(({ pin, i }) => {
               const { x, z } = pinPosition(pin.number);
               const base = project(x, 0, z);
@@ -181,8 +190,8 @@ export function LaneFallback2D({
           </g>
 
           {phase === "intro" &&
-            DRUG_ORDER.map((id, i) => {
-              const x = introBallX(i);
+            CONVENTIONAL_BALLS.map((id, i) => {
+              const x = introBallX(i, CONVENTIONAL_BALLS.length);
               const c = project(x, BALL_RADIUS, BALL_START_Z);
               const r = Math.abs(project(x, BALL_RADIUS * 2, BALL_START_Z).y - c.y);
               return (

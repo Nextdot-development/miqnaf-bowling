@@ -3,10 +3,19 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronUp } from "lucide-react";
 import { useMemo, useRef, useState, type MutableRefObject, type PointerEvent } from "react";
-import { PRE_ROLL_QUESTION } from "@/data/gameData";
 import { BALL_RADIUS, BALL_START_Z } from "@/lib/laneLayout";
 import { createProjector } from "@/lib/projection";
 import type { GamePhase } from "@/types/game";
+
+/** The card at the top of the lane before a roll. */
+export interface LanePrompt {
+  /** "Hello Dr. …," above the text, if any. */
+  greeting?: string;
+  eyebrow?: string;
+  text: string;
+  /** A button on the card that throws the ball (as well as the swipe). */
+  action?: string;
+}
 
 interface SwipeToRollProps {
   phase: GamePhase;
@@ -17,6 +26,7 @@ interface SwipeToRollProps {
   aimRef: MutableRefObject<number>;
   onAimingChange: (aiming: boolean) => void;
   onRoll: () => void;
+  prompt?: LanePrompt;
 }
 
 /** Fraction of the stage height a full swipe covers. */
@@ -28,9 +38,10 @@ const FLICK_SPEED = 0.55;
 /** The swipe zone covers the lane below this fraction of the stage height. */
 const ZONE_TOP = 0.42;
 
-export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingChange, onRoll }: SwipeToRollProps) {
+export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingChange, onRoll, prompt }: SwipeToRollProps) {
   const reduce = useReducedMotion();
-  const enabled = phase === "selecting" && hasBall;
+  // Once the frame's ball is presented on the lane.
+  const enabled = phase === "ready" && hasBall;
   const gesture = useRef<{ id: number; x: number; y: number; samples: { y: number; t: number }[] } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [armed, setArmed] = useState(false);
@@ -118,7 +129,8 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
   };
 
   const showHint = enabled && !dragging;
-  const showPick = phase === "selecting" && !hasBall;
+  // Choosing the therapy: only the prompt card (no swipe yet).
+  const showPick = phase === "therapy";
 
   return (
     <div
@@ -175,23 +187,42 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
         )}
       </AnimatePresence>
 
-      {/* Top of the lane. On the kiosk: the question (between the ball rack and
-          the pin key) with the current instruction under it. On smaller screens
-          the lane is too small for that, so the question sits above the lane
-          (GameShell) and only a compact instruction pill shows here. */}
       {(showHint || showPick || dragging) && (
         <div
-          className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/80 px-5 py-2 text-center shadow-lift backdrop-blur-sm kiosk:w-[min(46%,44rem)] kiosk:whitespace-normal kiosk:rounded-2xl kiosk:px-7 kiosk:py-4 ${
+          className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/80 px-5 py-2 text-center shadow-lift backdrop-blur-sm kiosk:w-auto kiosk:max-w-[min(60rem,calc(100%-2*(min(24rem,25%)+2.75rem)))] kiosk:rounded-2xl kiosk:px-8 kiosk:py-4 ${
             // Before a ball is picked there is no instruction, so off the kiosk
             // (where the card holds only the instruction) there is nothing to show.
             showPick ? "hidden kiosk:block" : ""
           }`}
           style={{ top: -height * ZONE_TOP + 16 }}
         >
-          <p className="eyebrow hidden text-brand-gold kiosk:block kiosk:text-sm">Question</p>
-          <p className="mt-1 hidden text-xl font-bold leading-snug text-white kiosk:block kiosk:text-[1.55rem]">{PRE_ROLL_QUESTION}</p>
+          {prompt && (
+            <>
+              {prompt.greeting && (
+                <p className="mb-1 hidden text-lg font-semibold text-white kiosk:block kiosk:text-[min(1.2rem,1.1vw)]">{prompt.greeting}</p>
+              )}
+              {/* One compact row on the kiosk (text beside the throw button), so the
+                  card stays clear of the back row of pins on shorter screens. */}
+              <div className={prompt.action && enabled ? "hidden items-center gap-[1.25rem] text-left kiosk:flex" : "contents"}>
+                <div className="min-w-0">
+                  {prompt.eyebrow && <p className="eyebrow hidden text-brand-gold kiosk:block kiosk:text-[min(0.875rem,0.85vw)]">{prompt.eyebrow}</p>}
+                  <p className="mt-1 hidden text-balance text-xl font-bold leading-snug text-white kiosk:block kiosk:text-[min(1.3rem,1.2vw)]">{prompt.text}</p>
+                </div>
+                {prompt.action && enabled && (
+                  <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={onRoll}
+                    className="btn-primary pointer-events-auto shrink-0 whitespace-nowrap px-[1.5rem] py-[0.6rem] text-lg tracking-[0.06em] kiosk:text-[min(1.2rem,1.15vw)]"
+                  >
+                    {prompt.action}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
           {!showPick && (
-            <p className="text-sm font-bold text-white sm:text-base kiosk:mt-2 kiosk:text-lg kiosk:font-semibold kiosk:text-white/75" aria-hidden>
+            <p className={`text-sm font-bold text-white sm:text-base kiosk:mt-2 kiosk:text-lg kiosk:font-semibold kiosk:text-white/75 ${prompt?.action && !dragging ? "kiosk:hidden" : ""}`} aria-hidden>
               {dragging ? (armed ? "Let go to roll" : "Keep swiping up") : "Swipe the ball up to roll"}
             </p>
           )}

@@ -4,22 +4,29 @@ import { Environment, Lightformer } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
-import { DRUG_ORDER } from "@/data/gameData";
+import { CONVENTIONAL_BALLS } from "@/data/gameData";
 import { CAMERA, FRONT_ROW_Z, introBallX, verticalFovFor } from "@/lib/laneLayout";
 import { BALL_COLORS } from "@/lib/drugVisuals";
 import type { DrugId, GamePhase, LanePins, Pin } from "@/types/game";
 import { BowlingBall } from "./BowlingBall";
 import { BowlingLane } from "./BowlingLane";
 import { PinDeck } from "./PinDeck";
+import { PinSetter } from "./PinSetter";
 import { SceneTimelineContext, type SceneTimeline } from "./sceneClock";
 
 export interface BowlingSceneProps {
   phase: GamePhase;
   /** Selected drug: sets the ball colour. */
   ballDrug: DrugId | null;
-  /** Every pin's state for this throw (up, down, wobble, or cleared after round 1). */
+  /** Every pin's state for this throw (up, down or wobble). */
   lane: LanePins;
   rollStartedAt: number | null;
+  /** Fixes the ball's curved line (shared by both throws of a session). */
+  lineSeed: number | null;
+  /** The first throw's ball: fixes the line through the rack (shared by both throws). */
+  lineDrug: DrugId | null;
+  /** When the transition's rack reset started, if it has. */
+  rackResetAt?: number | null;
   interactive: boolean;
   onPinSelect: (pin: Pin) => void;
   onContextLost?: () => void;
@@ -131,18 +138,21 @@ function Lights() {
 }
 
 export default function BowlingScene(props: BowlingSceneProps) {
-  const { phase, ballDrug, lane, rollStartedAt, interactive, onPinSelect, onContextLost, onReady, aimRef, aiming } =
+  const { phase, ballDrug, lane, rollStartedAt, lineSeed, lineDrug, rackResetAt = null, interactive, onPinSelect, onContextLost, onReady, aimRef, aiming } =
     props;
 
-  const timeline = useRef<SceneTimeline>({ phase, rollStartedAt, aim: aimRef });
-  timeline.current = { phase, rollStartedAt, aim: aimRef };
+  // The second throw is at the rack exactly as the first left it: no sweep (client request).
+  const sweeping = false;
+  const strike = Object.values(lane).every((s) => s === "down");
+  const timeline = useRef<SceneTimeline>({ phase, rollStartedAt, lineSeed, lineDrug, rackResetAt, sweeping, strike, aim: aimRef });
+  timeline.current = { phase, rollStartedAt, lineSeed, lineDrug, rackResetAt, sweeping, strike, aim: aimRef };
 
   return (
     <SceneTimelineContext.Provider value={timeline}>
       <Canvas
         shadows="soft"
         dpr={[1, 2]}
-        frameloop={phase === "rolling" || aiming ? "always" : "demand"}
+        frameloop={phase === "rolling" || phase === "transition" || aiming ? "always" : "demand"}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         camera={{ position: [...CAMERA.position], fov: 30 }}
         className="!absolute inset-0"
@@ -161,9 +171,10 @@ export default function BowlingScene(props: BowlingSceneProps) {
           interactive={interactive}
           onPinSelect={onPinSelect}
         />
-        {/* Intro: the three balls line up. In play, only the picked ball is on the lane. */}
+        <PinSetter />
+        {/* Intro: Player 1's two balls line up. In play, only the ball being rolled is on the lane. */}
         {phase === "intro"
-          ? DRUG_ORDER.map((id, i) => <BowlingBall key={id} color={BALL_COLORS[id]} offsetX={introBallX(i)} still />)
+          ? CONVENTIONAL_BALLS.map((id, i) => <BowlingBall key={id} color={BALL_COLORS[id]} offsetX={introBallX(i, CONVENTIONAL_BALLS.length)} still />)
           : ballDrug && <BowlingBall color={BALL_COLORS[ballDrug]} />}
       </Canvas>
     </SceneTimelineContext.Provider>

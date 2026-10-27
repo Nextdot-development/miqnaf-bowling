@@ -2,36 +2,37 @@ import { PINS } from "@/data/gameData";
 import { pinsDownCount, standingPins } from "@/lib/gameLogic";
 import type { DrugId, PinNumber } from "@/types/game";
 
-export const EXPECTED_LABELS: Readonly<Record<PinNumber, string>> = {
-  1: "MDR Spn",
-  2: "Atypicals",
-  3: "Safety",
-  4: "Lung levels",
-  5: "Bactericidal",
-  6: "Short course",
-  7: "Anti-inflam.",
-  8: "Monotherapy",
+/** The ten supplied barriers, in rack order. */
+export const EXPECTED_NAMES: Readonly<Record<PinNumber, string>> = {
+  1: "Susceptibility Vs CABP Pathogens",
+  2: "Bactericidal Activity",
+  3: "Patient Compliance",
+  4: "GI Side Effects",
+  5: "QT Prolongation",
+  6: "Atypical Coverage",
+  7: "Anti-Inflammatory / Immunomodulatory Activity",
+  8: "Managing AMR",
+  9: "Lower Drug-Drug Interaction",
+  10: "Potency",
 };
 
+/** First-throw results as supplied (the shaking pin counts as standing). */
 export const EXPECTED_RESULTS: Readonly<Record<DrugId, { down: number; standing: PinNumber[] }>> = {
-  azithromycin: { down: 4, standing: [1, 5, 6, 8] },
-  amoxclav: { down: 1, standing: [1, 2, 4, 5, 6, 7, 8] },
-  nafithromycin: { down: 8, standing: [] },
+  amoxiclavAzithro: { down: 4, standing: [1, 3, 4, 5, 8, 10] },
+  amoxiclavClarithro: { down: 5, standing: [1, 3, 4, 5, 8] },
+  miqnaf: { down: 10, standing: [] },
 };
 
 export function validateOutcomeMatrix(): string[] {
   const errors: string[] = [];
-  if (PINS.length !== 8) errors.push(`Expected 8 pins, found ${PINS.length}`);
+  if (PINS.length !== 10) errors.push(`Expected 10 pins, found ${PINS.length}`);
 
   const numbers = PINS.map((p) => p.number);
   if (new Set(numbers).size !== numbers.length) errors.push("Pin numbers are not unique");
 
   for (const pin of PINS) {
-    if (EXPECTED_LABELS[pin.number] !== pin.label) {
-      errors.push(`Pin ${pin.number} label "${pin.label}" should be "${EXPECTED_LABELS[pin.number]}"`);
-    }
-    const expectedRow = pin.number <= 4 ? "front" : "rear";
-    if (pin.row !== expectedRow) errors.push(`Pin ${pin.number} should be in the ${expectedRow} row`);
+    const name = pin.name.map((s) => (typeof s === "string" ? s : s.em)).join("");
+    if (EXPECTED_NAMES[pin.number] !== name) errors.push(`Pin ${pin.number} "${name}" should be "${EXPECTED_NAMES[pin.number]}"`);
   }
 
   for (const [drug, expected] of Object.entries(EXPECTED_RESULTS) as [DrugId, (typeof EXPECTED_RESULTS)[DrugId]][]) {

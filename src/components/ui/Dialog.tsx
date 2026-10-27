@@ -17,10 +17,6 @@ interface DialogProps {
   size?: "md" | "lg";
 }
 
-/**
- * Modal dialog: traps focus, closes on Escape or backdrop click, and returns
- * focus to the element that opened it.
- */
 export function Dialog({ open, onClose, title, eyebrow, children, footer, size = "md" }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);

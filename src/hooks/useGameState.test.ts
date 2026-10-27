@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ROLL_TOTAL_MS } from "@/lib/timing";
+import { RACK_RESET_MS, ROLL_TOTAL_MS } from "@/lib/timing";
 import { useGameState } from "./useGameState";
 
 const playRoll = vi.fn(async () => {});
@@ -16,21 +16,38 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("useGameState sound", () => {
-  it("plays the roll sound for every player, not just the first", () => {
+describe("useGameState", () => {
+  it("plays the roll sound for all three throws in every session, and resets the rack on the transition", () => {
     const { result } = renderHook(() => useGameState(false));
+    const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms + 10));
 
-    const playOneGame = (drug: "azithromycin" | "nafithromycin") => {
+    const playSession = (drug: "amoxiclavAzithro" | "amoxiclavClarithro") => {
       act(() => result.current.start());
-      act(() => result.current.selectDrug(drug));
+      act(() => result.current.submitName("Asha"));
+      act(() => result.current.selectTherapy(drug));
+      act(() => result.current.startBowling());
       act(() => result.current.roll());
-      act(() => vi.advanceTimersByTime(ROLL_TOTAL_MS + 10));
-      act(() => result.current.newSession()); // one ball per player, then restart
+      wait(ROLL_TOTAL_MS); // first throw
+      act(() => result.current.takeSecondChance());
+      act(() => result.current.roll());
+      wait(ROLL_TOTAL_MS); // second throw, same ball
+      expect(result.current.state.phase).toBe("transition");
+      wait(RACK_RESET_MS);
+      expect(result.current.state.rackResetAt).not.toBeNull();
+      act(() => result.current.startFrame2());
+      act(() => result.current.roll());
+      wait(ROLL_TOTAL_MS); // MIQNAF®
+      act(() => result.current.showScorecard());
+      act(() => result.current.showClosing());
+      expect(result.current.state.phase).toBe("closing");
+      act(() => result.current.newSession());
     };
 
-    playOneGame("azithromycin");
-    playOneGame("nafithromycin");
-    playOneGame("azithromycin");
-    expect(playRoll).toHaveBeenCalledTimes(3);
+    playSession("amoxiclavAzithro");
+    playSession("amoxiclavClarithro");
+    expect(playRoll).toHaveBeenCalledTimes(6);
+    // Each session: first throw (pins fall), second throw (none fall: no strike sound), MIQNAF® (all ten).
+    const pinsDown = playRoll.mock.calls.map((c) => (c as unknown as [{ pinsDown: number }])[0].pinsDown);
+    expect(pinsDown).toEqual([4, 0, 10, 5, 0, 10]);
   });
 });

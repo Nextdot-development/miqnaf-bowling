@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { END_POPUP_DELAY_MS, ROLL_TOTAL_MS } from "@/lib/timing";
+import { RACK_RESET_MS, ROLL_TOTAL_MS } from "@/lib/timing";
 import { mediaState } from "@/test/setup";
 import { GameShell } from "./GameShell";
 
@@ -12,7 +12,6 @@ vi.mock("@/hooks/useGameAudio", () => ({
 
 beforeEach(() => {
   playEnding.mockClear();
-  playQuestion.mockClear();
   mediaState.reducedMotion = false;
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 });
@@ -21,48 +20,29 @@ afterEach(() => {
 });
 
 const button = (name: RegExp) => screen.getByRole("button", { name });
+const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms + 10));
 
-function rollAndWaitForPopup(drug: RegExp) {
-  fireEvent.click(button(drug));
-  fireEvent.click(button(/^Roll the ball/), { detail: 0 });
-  act(() => vi.advanceTimersByTime(ROLL_TOTAL_MS + 10));
-  expect(playEnding).not.toHaveBeenCalled(); // not before the pop-up shows
-  act(() => vi.advanceTimersByTime(END_POPUP_DELAY_MS + 10));
-}
-
-describe("end-of-game sounds", () => {
-  it("chimes once as the question pops up", () => {
-    render(<GameShell />);
-    expect(playQuestion).not.toHaveBeenCalled();
-    fireEvent.click(button(/start game/i));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(playQuestion).toHaveBeenCalledTimes(1);
-    fireEvent.click(button(/^Choose a ball$/));
-    fireEvent.click(button(/^Azithromycin/));
-    expect(playQuestion).toHaveBeenCalledTimes(1); // not again while playing
-  });
-
-  it("plays nothing between rounds, then the losing sound once if round 2 leaves pins up", () => {
+describe("sounds", () => {
+  it.each([/^Amoxi-Clav \+ Azithromycin$/, /^Amoxi-Clav \+ Clarithromycin$/])("a soft wah after the first throw, the chime for the strike (%s)", (therapy) => {
     render(<GameShell />);
     fireEvent.click(button(/start game/i));
-    fireEvent.click(button(/^Choose a ball$/));
-    rollAndWaitForPopup(/^Azithromycin/);
-    expect(screen.getByText("Good coverage, but some critical respiratory challenges remain.")).toBeInTheDocument();
-    expect(playEnding).not.toHaveBeenCalled();
-    fireEvent.click(button(/^Choose another ball/));
-    rollAndWaitForPopup(/^Amox.clav/);
-    expect(screen.getByText("Unfortunately pins are still up")).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("Enter your name"), { target: { value: "Asha" } });
+    fireEvent.click(button(/^Continue/));
+    fireEvent.click(button(/^Choose your therapy/));
+    fireEvent.click(button(new RegExp(therapy.source.slice(0, -1))));
+    fireEvent.click(button(/^Roll the ball/), { detail: 0 });
+    wait(ROLL_TOTAL_MS);
     expect(playEnding).toHaveBeenCalledTimes(1);
-    expect(playEnding).toHaveBeenCalledWith("lost");
-  });
-
-  it("plays the confetti sound once on a win", () => {
-    render(<GameShell />);
-    fireEvent.click(button(/start game/i));
-    fireEvent.click(button(/^Choose a ball$/));
-    rollAndWaitForPopup(/^Nafithromycin/);
-    expect(screen.getByText("You have won the game")).toBeInTheDocument();
-    expect(playEnding).toHaveBeenCalledTimes(1);
-    expect(playEnding).toHaveBeenCalledWith("won");
+    expect(playEnding).toHaveBeenLastCalledWith("lost");
+    fireEvent.click(button(/^Throw the ball/i));
+    fireEvent.click(button(/^Roll the ball/), { detail: 0 });
+    wait(ROLL_TOTAL_MS);
+    wait(RACK_RESET_MS);
+    fireEvent.click(button(/^Novel Therapy Challenge/i));
+    fireEvent.click(button(/^Roll the ball/), { detail: 0 });
+    expect(playEnding).toHaveBeenCalledTimes(1); // nothing more before the strike
+    wait(ROLL_TOTAL_MS);
+    expect(playEnding).toHaveBeenCalledTimes(2);
+    expect(playEnding).toHaveBeenLastCalledWith("won");
   });
 });

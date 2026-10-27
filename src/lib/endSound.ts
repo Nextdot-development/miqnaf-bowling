@@ -1,7 +1,7 @@
 /**
  * End-of-game sounds, synthesised with the Web Audio API (no audio files):
  *
- * - won:  three crisp confetti "pops", then a clear rising bell chime.
+ * - won:  confetti "pops" (in time with the confetti bursts), then a clear rising bell chime.
  * - lost: a soft, short descending "wah-wah", ending on a gentle pitch wobble.
  * - question: a soft two-note rising "ding-ding" as the pre-roll question pops up.
  *
@@ -14,6 +14,9 @@ export type EndOutcome = "won" | "lost";
 
 /** Every scheduled source is reported so the caller can stop it early. */
 type Track = (node: AudioScheduledSourceNode) => void;
+
+/** When the confetti bursts pop, in seconds (Confetti.tsx BURSTS). */
+export const CONFETTI_POPS_S = [0] as const;
 
 function noiseBuffer(ctx: BaseAudioContext, seconds: number): AudioBuffer {
   const length = Math.max(1, Math.floor(ctx.sampleRate * seconds));
@@ -147,12 +150,15 @@ export function scheduleEndSound(
   const comp = compressor(ctx, out);
 
   if (outcome === "won") {
-    pop(ctx, comp, t0, 2200, track);
-    pop(ctx, comp, t0 + 0.08, 3000, track);
-    pop(ctx, comp, t0 + 0.17, 2600, track);
-    // C6, E6, G6, then a longer C7: a clear rising sparkle as the confetti falls.
-    [1046.5, 1318.5, 1568].forEach((f, i) => bell(ctx, comp, t0 + 0.26 + i * 0.09, f, 0.3, 0.6, track));
-    bell(ctx, comp, t0 + 0.53, 2093, 0.32, 1.1, track);
+    // A double pop for each confetti burst (the cannons fire in pairs).
+    CONFETTI_POPS_S.forEach((at, i) => {
+      pop(ctx, comp, t0 + at, 2200 + i * 300, track);
+      pop(ctx, comp, t0 + at + 0.07, 2800 + i * 200, track);
+    });
+    // Then C6, E6, G6 and a longer C7: a clear rising sparkle.
+    const chime = t0 + 0.25;
+    [1046.5, 1318.5, 1568].forEach((f, i) => bell(ctx, comp, chime + i * 0.09, f, 0.3, 0.6, track));
+    bell(ctx, comp, chime + 0.27, 2093, 0.32, 1.1, track);
     return;
   }
   // G4, F#4, then F4 sliding to E4.

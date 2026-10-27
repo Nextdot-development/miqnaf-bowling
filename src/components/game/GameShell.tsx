@@ -1,24 +1,41 @@
 "use client";
 
+import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DRUGS, PRE_ROLL_QUESTION, ROUND_ONE_FEEDBACK, ROUND_TWO_MESSAGE, STRIKE, type FirstMissDrug } from "@/data/gameData";
+import {
+  DRUGS,
+  FIRST_THROW_COPY,
+  FIRST_THROW_SCORE,
+  THERAPY_HEADING,
+  FRAME_1_SCORE,
+  FRAME_2_SCORE,
+  GAME_TITLE,
+  NOVEL_COPY,
+  STRIKE_COPY,
+  TRANSITION_COPY,
+} from "@/data/gameData";
 import { useGameState } from "@/hooks/useGameState";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { joinPinNumbers, laneBefore, rollLane, richToPlain } from "@/lib/gameLogic";
+import { joinPinNumbers, laneBefore, rollLane, richToPlain, secondThrowLane } from "@/lib/gameLogic";
+import { sessionStage } from "@/lib/gameReducer";
 import { validateOutcomeMatrix } from "@/lib/outcomeValidation";
-import { END_POPUP_DELAY_MS } from "@/lib/timing";
-import type { LanePin, Pin } from "@/types/game";
+import type { LanePin, LanePins, Pin, SessionStage } from "@/types/game";
 import { Dialog } from "@/components/ui/Dialog";
 import { AccessiblePinList } from "./AccessiblePinList";
 import { BallRack } from "./BallRack";
-import { EndScreen, type EndOutcome } from "./EndScreen";
+import { ClosingScreen } from "./ClosingScreen";
 import { GameFooter } from "./GameFooter";
 import { GameHeader } from "./GameHeader";
 import { GameStage } from "./GameStage";
 import { IntroScreen } from "./IntroScreen";
+import { NameEntryScreen } from "./NameEntryScreen";
 import { PathogenInfoDialog } from "./PathogenInfoDialog";
 import { PinKey } from "./PinKey";
-import { QuestionPopup } from "./QuestionPopup";
+import { Scorecard } from "./Scorecard";
+import type { LanePrompt } from "./SwipeToRoll";
+import { TherapyScreen } from "./TherapyScreen";
+import { ThrowResultPopup } from "./ThrowResultPopup";
+import { TransitionCard } from "./TransitionCard";
 
 if (process.env.NODE_ENV !== "production") {
   const errors = validateOutcomeMatrix();
@@ -29,6 +46,25 @@ interface GameShellProps {
   /** Force the 2D lane (tests / manual fallback). */
   force2D?: boolean;
 }
+
+const TITLES: Record<SessionStage, string> = {
+  WELCOME: "",
+  NAME_ENTRY: GAME_TITLE,
+  THERAPY_SELECTION: GAME_TITLE,
+  FRAME_1_READY: "Conventional Therapy",
+  FRAME_1_ROLLING: "Rolling",
+  FRAME_1_RESULT: FIRST_THROW_COPY.heading,
+  SECOND_ATTEMPT: "Second Throw",
+  TRANSITION: TRANSITION_COPY.heading,
+  FRAME_2_READY: NOVEL_COPY.heading,
+  FRAME_2_ROLLING: "Rolling",
+  FRAME_2_RESULT: STRIKE_COPY.heading,
+  SCORECARD: "Results",
+  CLOSING_SCREEN: GAME_TITLE,
+};
+
+/** Stages shown off the lane (full screens of their own). The therapy choice is a pop-up over the lane. */
+const OFF_LANE: readonly SessionStage[] = ["NAME_ENTRY"];
 
 export function GameShell({ force2D = false }: GameShellProps) {
   const reducedMotion = useReducedMotion();
@@ -44,19 +80,33 @@ export function GameShell({ force2D = false }: GameShellProps) {
     return () => window.removeEventListener("contextmenu", block);
   }, []);
 
-  // Every pin's state right now: cleared ones are gone in round 2; during and
-  // after a throw, which fall, which wobble and which stay up.
-  const lane = useMemo(() => {
-    if (state.phase === "result" && state.result) return state.result.lane;
-    if (state.phase === "rolling" && state.selectedDrug) return rollLane(state.selectedDrug, state.cleared);
-    return laneBefore(state.cleared);
-  }, [state.phase, state.result, state.selectedDrug, state.cleared]);
+  const stage = sessionStage(state);
 
-  // Pin labels' accessible names; include the outcome once it is revealed.
-  const showStatus = state.phase === "result";
+  // Every pin's state on the lane right now, all from the configured outcomes:
+  // a full rack before a throw; during and after it, which fall, shake or stay
+  // up; on the second throw, what the first left (its fallen pins gone).
+  const lane: LanePins = useMemo(() => {
+    if (state.phase === "rolling" && state.selectedDrug) {
+      return state.frame === 1 && state.attempts === 2 && state.firstThrow ? secondThrowLane(state.firstThrow.lane) : rollLane(state.selectedDrug);
+    }
+    if (state.phase === "result" && state.result) return state.result.lane;
+    // Ready for the second throw: the rack as the first throw left it (fallen pins lying where they fell).
+    if (state.phase === "ready" && state.frame === 1 && state.attempts === 1 && state.firstThrow) {
+      return Object.fromEntries(
+        Object.entries(state.firstThrow.lane).map(([n, s]) => [n, s === "down" || s === "gone" ? "gone" : "up"]),
+      ) as LanePins;
+    }
+    // The transition starts from what the last throw left (the second, or the first if it was declined).
+    if (state.phase === "transition" && (state.secondThrow ?? state.firstThrow)) return (state.secondThrow ?? state.firstThrow)!.lane;
+    if ((state.phase === "scorecard" || state.phase === "closing") && state.novelThrow) return state.novelThrow.lane;
+    return laneBefore();
+  }, [state.phase, state.frame, state.attempts, state.selectedDrug, state.result, state.firstThrow, state.secondThrow, state.novelThrow]);
+
+  // Pin labels' accessible names; include the outcome once it is known.
+  const showStatus = state.phase === "result" || state.phase === "transition" || state.phase === "scorecard";
   const pinName = useCallback(
     (pin: Pin) => {
-      const said: Record<LanePin, string> = { up: "Standing", down: "Down", wobble: "Wobbled, still standing", cleared: "Down in round 1" };
+      const said: Record<LanePin, string> = { up: "Standing", down: "Down", wobble: "Shaking, still standing", gone: "Down" };
       const status = showStatus ? ` ${said[lane[pin.number]]}.` : "";
       return `Pin ${pin.number}, ${pin.label}: ${richToPlain(pin.name)}.${status} Open pin card.`;
     },
@@ -64,89 +114,63 @@ export function GameShell({ force2D = false }: GameShellProps) {
   );
   const onPinSelect = useCallback((pin: Pin) => game.openPin(pin.number), [game]);
 
+  const therapy = state.therapy;
+  const frame1Score = therapy ? FRAME_1_SCORE[therapy] : null;
+
   const announcement = useMemo(() => {
-    if (state.phase === "rolling" && state.selectedDrug) return `Rolling ${DRUGS[state.selectedDrug].name}.`;
+    if (stage === "NAME_ENTRY") return "Enter your name to begin.";
+    if (stage === "THERAPY_SELECTION") return "Choose your therapy.";
+    if (stage === "TRANSITION") return `${TRANSITION_COPY.heading} ${TRANSITION_COPY.rack}`;
+    if (stage === "FRAME_2_READY") return `${NOVEL_COPY.heading}: ${NOVEL_COPY.ball}.`;
+    if (state.phase === "rolling" && state.selectedDrug) {
+      return `Frame ${state.frame}${stage === "SECOND_ATTEMPT" ? ", second throw" : ""}: rolling ${DRUGS[state.selectedDrug].name}.`;
+    }
     if (state.phase === "result" && state.result) {
       const r = state.result;
-      const standing = r.standing.length
-        ? `Pins ${joinPinNumbers(r.standing)} are still standing.`
-        : "No pins are standing.";
-      return `Round ${r.round}, ${DRUGS[r.drug].name}: ${r.pinsDown} of ${r.totalPins} pins down. ${standing}`;
+      const standing = r.standing.length ? `Pins ${joinPinNumbers(r.standing)} are still standing.` : "No pins are standing.";
+      return `Frame ${r.frame}, ${DRUGS[r.drug].name}: ${r.pinsDown} of ${r.totalPins} pins down. ${standing}`;
     }
     return "";
-  }, [state.phase, state.selectedDrug, state.result]);
+  }, [stage, state.phase, state.frame, state.selectedDrug, state.result]);
 
-  const title =
-    state.phase === "rolling"
-      ? "Ball roll"
-      : state.phase === "result" && state.result
-        ? `Result · ${DRUGS[state.result.drug].name}`
-        : `Round ${state.round} · Choose your ball`;
+  // No frame badge in the header (client request).
+  const frameBadge = null;
 
-  
-  // After each throw the lane shows the pins briefly, then a pop-up: STRIKE
-  // (all down), the round 1 explanation (pins left, round 2 to come), or
-  // "pins are still up" after round 2.
-  const [ending, setEnding] = useState<EndOutcome | null>(null);
-  const outcome: EndOutcome | null =
-    state.phase === "result" && state.result
-      ? state.result.standing.length === 0
-        ? "won"
-        : state.result.round === 1
-          ? "round"
-          : "lost"
-      : null;
-  const overlayOpen = state.openPin !== null;
-  useEffect(() => {
-    if (!outcome || overlayOpen) return;
-    const t = setTimeout(() => setEnding(outcome), END_POPUP_DELAY_MS);
-    return () => clearTimeout(t);
-  }, [outcome, overlayOpen, state.result?.rollId]);
-  const shownEnding = state.phase === "result" ? ending : null;
-
-  // Confetti pops and a chime for a win, a soft "wah-wah" for pins left
-  // standing: once, as the pop-up appears (and only with sound on).
+  // Sounds: the soft "wah" after the first throw, the chime for the strike.
   const { playEnding } = game;
+  const firstResult = stage === "FRAME_1_RESULT";
+  const strike = stage === "FRAME_2_RESULT";
   useEffect(() => {
-    if (shownEnding === "won" || shownEnding === "lost") playEnding(shownEnding);
-  }, [shownEnding, playEnding]);
-
-  // Wording for the pop-up, from the scenario copy.
-  const firstDrug = state.rolledDrugs[0];
-  const endCopy = useMemo(() => {
-    const r = state.result;
-    if (!r) return {};
-    if (r.standing.length === 0) {
-      return r.round === 1 || !firstDrug || firstDrug === "nafithromycin"
-        ? { message: STRIKE.firstThrow, tagline: STRIKE.tagline, evidence: STRIKE.evidence }
-        : { message: ROUND_TWO_MESSAGE[firstDrug as FirstMissDrug].nafithromycin, evidence: STRIKE.evidence };
-    }
-    if (r.round === 1) return ROUND_ONE_FEEDBACK[r.drug as FirstMissDrug];
-    return { message: firstDrug && firstDrug !== "nafithromycin" ? ROUND_TWO_MESSAGE[firstDrug as FirstMissDrug][r.drug] : undefined };
-  }, [state.result, firstDrug]);
-
-  const nextRound = useCallback(() => {
-    setEnding(null);
-    game.nextRound();
-  }, [game]);
-
-  // The pre-roll question pops up once per player, when the lane first opens.
-  const [questionSeen, setQuestionSeen] = useState(false);
+    if (firstResult) playEnding("lost");
+  }, [firstResult, playEnding]);
   useEffect(() => {
-    if (state.phase === "intro") setQuestionSeen(false);
+    if (strike && state.novelThrow?.standing.length === 0) playEnding("won");
+  }, [strike, state.novelThrow, playEnding]);
+
+  // The card at the top of the lane before each frame's throw, with a throw button.
+  const prompt: LanePrompt | undefined =
+    stage === "THERAPY_SELECTION"
+      ? { greeting: `Hi Dr. ${state.playerName},`, eyebrow: THERAPY_HEADING, text: "Tap a ball to choose your conventional therapy" }
+      : stage === "FRAME_1_READY" && therapy
+      ? { text: DRUGS[therapy].name }
+      : stage === "FRAME_2_READY"
+        ? { eyebrow: NOVEL_COPY.heading, text: NOVEL_COPY.ball }
+        : undefined;
+
+  const onLane = !(stage === "WELCOME" || OFF_LANE.includes(stage));
+
+  // The greeting pop-up shows once per doctor.
+  const [introSeen, setIntroSeen] = useState(false);
+  useEffect(() => {
+    if (state.phase === "intro") setIntroSeen(false);
   }, [state.phase]);
-  const showQuestion = state.phase === "selecting" && !questionSeen;
-
-  // A soft chime as the question pops up (only with sound on).
-  const { playQuestion } = game;
-  useEffect(() => {
-    if (showQuestion) playQuestion();
-  }, [showQuestion, playQuestion]);
-
-  const restart = useCallback(() => {
-    setEnding(null);
-    game.newSession();
-  }, [game]);
+  const chooseTherapy = useCallback(
+    (drug: Parameters<typeof game.selectTherapy>[0]) => {
+      game.selectTherapy(drug);
+      game.startBowling();
+    },
+    [game],
+  );
 
   return (
     <div className="flex min-h-[100dvh] flex-col kiosk:h-[100dvh] kiosk:overflow-hidden">
@@ -155,55 +179,75 @@ export function GameShell({ force2D = false }: GameShellProps) {
       ) : (
         <>
           <GameHeader
-            title={title}
+            title={stage === "FRAME_1_READY" && state.attempts === 1 ? TITLES.SECOND_ATTEMPT : TITLES[stage]}
+            frame={frameBadge}
             soundOn={state.soundOn}
             onSoundChange={game.setSound}
             onNewSession={() => setConfirmReset(true)}
           />
           <main className="mx-auto flex w-full flex-1 flex-col px-4 py-5 sm:px-8 lg:px-12 lg:py-7 kiosk:min-h-0 kiosk:px-[2.5rem] kiosk:py-[1.5rem]">
-            {/* Full-width lane. On the kiosk the ball rack floats over its left
-                edge and the pin key over its right edge; on smaller screens they
-                sit above and below it. */}
-            <div className="relative flex flex-col gap-5 kiosk:min-h-0 kiosk:flex-1">
-              <GameStage
-                phase={state.phase}
-                selectedDrug={state.selectedDrug}
-                result={state.result}
-                rollStartedAt={state.rollStartedAt}
-                interactive={state.phase === "selecting" || state.phase === "result"}
-                pinName={pinName}
-                onPinSelect={onPinSelect}
-                lane={lane}
-                onRoll={game.roll}
-                force2D={force2D}
-                className="aspect-[4/3] w-full sm:aspect-[16/9] kiosk:aspect-auto kiosk:min-h-0 kiosk:flex-1"
-                wrapperClassName="kiosk:min-h-0 kiosk:flex-1"
-              />
-              <AccessiblePinList lane={lane} showOutcome={state.phase === "result"} />
-              {state.phase === "selecting" && (
-                <section
-                  aria-label="Question"
-                  className="order-first rounded-2xl bg-brand-navy px-5 py-3.5 text-center text-white kiosk:hidden"
-                >
-                  <p className="eyebrow text-brand-gold">Question</p>
-                  <p className="mt-1 text-base font-bold leading-snug sm:text-lg">{PRE_ROLL_QUESTION}</p>
-                </section>
-              )}
-              <BallRack
-                phase={state.phase}
-                selectedDrug={state.selectedDrug}
-                rolledDrugs={state.rolledDrugs}
-                round={state.round}
-                onSelect={game.selectDrug}
-                className="order-first rounded-3xl bg-brand-navy p-4 kiosk:absolute kiosk:left-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(22rem,24%)] kiosk:bg-transparent kiosk:p-0"
-              />
-              <PinKey
-                onOpenPin={game.openPin}
-                disabled={state.phase === "rolling"}
-                cleared={state.cleared}
-                className="kiosk:absolute kiosk:right-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(24rem,25%)]"
-              />
-            </div>
+            <AnimatePresence mode="wait">
+              {stage === "NAME_ENTRY" && <NameEntryScreen key="name" onSubmit={game.submitName} />}
+            </AnimatePresence>
+            {onLane && (
+              // Full-width lane. On the kiosk the ball rack floats over its left
+              // edge and the pin key over its right edge; on smaller screens they
+              // sit above and below it.
+              <div className="relative flex flex-col gap-5 kiosk:min-h-0 kiosk:flex-1">
+                <GameStage
+                  phase={state.phase}
+                  selectedDrug={state.selectedDrug}
+                  result={state.result}
+                  rollStartedAt={state.rollStartedAt}
+                  lineSeed={state.lineSeed}
+                  lineDrug={state.frame === 2 ? state.selectedDrug : therapy}
+                  rackResetAt={state.rackResetAt}
+                  prompt={prompt}
+                  interactive={state.phase !== "rolling"}
+                  pinName={pinName}
+                  onPinSelect={onPinSelect}
+                  lane={lane}
+                  onRoll={game.roll}
+                  force2D={force2D}
+                  className="aspect-[4/3] w-full sm:aspect-[16/9] kiosk:aspect-auto kiosk:min-h-0 kiosk:flex-1"
+                  wrapperClassName="kiosk:min-h-0 kiosk:flex-1"
+                />
+                <AccessiblePinList lane={lane} showOutcome={showStatus} />
+                {/* Off the kiosk the lane is too small for the prompt card: it sits above it, with its button. */}
+                {prompt && (
+                  <section
+                    aria-label={prompt.eyebrow ?? prompt.text}
+                    className="order-first rounded-2xl bg-brand-navy px-5 py-3.5 text-center text-white kiosk:hidden"
+                  >
+                    {prompt.eyebrow && <p className="eyebrow text-brand-gold">{prompt.eyebrow}</p>}
+                    <p className="mt-1 text-base font-bold leading-snug sm:text-lg">{prompt.text}</p>
+                    {prompt.action && (
+                      <button type="button" onClick={game.roll} className="btn-primary mt-3 px-6 py-2.5 text-base tracking-[0.06em]">
+                        {prompt.action}
+                      </button>
+                    )}
+                  </section>
+                )}
+                {stage === "TRANSITION" && (
+                  // Low on the lane, between the side panels, so the rack reset stays in view above it.
+                  <div className="order-first kiosk:absolute kiosk:bottom-[1.5rem] kiosk:left-1/2 kiosk:z-20 kiosk:w-[min(52rem,calc(100%-2*(min(24rem,25%)+2.75rem)))] kiosk:-translate-x-1/2">
+                    <TransitionCard score={frame1Score} onContinue={game.startFrame2} />
+                  </div>
+                )}
+                <BallRack
+                  phase={state.phase}
+                  frame={state.frame}
+                  selectedDrug={state.selectedDrug}
+                  onSelect={chooseTherapy}
+                  className="order-first rounded-3xl bg-brand-navy p-4 kiosk:absolute kiosk:left-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(22rem,24%)] kiosk:bg-transparent kiosk:p-0"
+                />
+                <PinKey
+                  onOpenPin={game.openPin}
+                  disabled={state.phase === "rolling"}
+                  className="kiosk:absolute kiosk:right-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(24rem,25%)]"
+                />
+              </div>
+            )}
           </main>
         </>
       )}
@@ -214,23 +258,39 @@ export function GameShell({ force2D = false }: GameShellProps) {
         {announcement}
       </p>
 
-      <EndScreen
-        outcome={shownEnding}
-        message={endCopy.message}
-        tagline={"tagline" in endCopy ? endCopy.tagline : undefined}
-        evidence={"evidence" in endCopy ? endCopy.evidence : null}
-        pinsDown={state.result?.pinsDown}
-        standing={state.result?.standing}
-        wobbled={state.result ? state.result.standing.filter((n) => state.result!.lane[n] === "wobble") : []}
-        onRestart={restart}
-        onNextRound={nextRound}
+      {/* After the first throw: the configured score, and one more throw with the same ball. */}
+      <ThrowResultPopup
+        result={firstResult ? state.firstThrow : null}
+        score={therapy ? FIRST_THROW_SCORE[therapy] : null}
+        copy={{ heading: FIRST_THROW_COPY.heading, lines: [FIRST_THROW_COPY.body], highlight: FIRST_THROW_COPY.ask, button: FIRST_THROW_COPY.button, secondary: { label: FIRST_THROW_COPY.skip, onClick: game.skipSecondThrow } }}
+        tone="attempt"
+        onAction={game.takeSecondChance}
       />
 
-      <PathogenInfoDialog pinNumber={state.openPin} onClose={game.closePin} />
+      {/* Frame 2: the strike. */}
+      <ThrowResultPopup
+        result={strike ? state.novelThrow : null}
+        score={FRAME_2_SCORE}
+        copy={{ heading: STRIKE_COPY.heading, lines: [STRIKE_COPY.body], button: STRIKE_COPY.button }}
+        tone="strike"
+        onAction={game.showScorecard}
+      />
 
-      {/* The question pops up first when the lane opens; once closed it stays
-          on the lane (top card) while the player chooses and swipes. */}
-      <QuestionPopup open={showQuestion} question={PRE_ROLL_QUESTION} onClose={() => setQuestionSeen(true)} />
+      {/* The greeting and the pins first; then the doctor picks a ball on the lane. */}
+      {stage === "THERAPY_SELECTION" && !introSeen && <TherapyScreen name={state.playerName} onStart={() => setIntroSeen(true)} />}
+
+      <Scorecard
+        open={stage === "SCORECARD"}
+        name={state.playerName}
+        therapy={therapy}
+        frame1Score={frame1Score}
+        frame2Score={FRAME_2_SCORE}
+        onContinue={game.showClosing}
+      />
+
+      {stage === "CLOSING_SCREEN" && <ClosingScreen name={state.playerName} onContinue={game.newSession} />}
+
+      <PathogenInfoDialog pinNumber={state.openPin} onClose={game.closePin} />
 
       <Dialog
         open={confirmReset}
@@ -255,7 +315,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
         }
       >
         <p className="text-lg text-ink-muted">
-          This clears the balls rolled and discussion points shown, and returns to the start screen for the next participant.
+          This clears the name and both frames, and returns to the start screen for the next doctor.
         </p>
       </Dialog>
     </div>

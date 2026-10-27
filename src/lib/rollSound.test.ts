@@ -20,20 +20,39 @@ describe("roll sound plan", () => {
     expect(strike?.at).toBeCloseTo(IMPACT_SECONDS, 9);
   });
 
-  it("fades the rolling sound out around impact", () => {
-    const roll = buildSoundCues(8, 8).find((c) => c.sound === "roll")!;
-    expect(roll.at).toBe(0);
-    expect(roll.fadeFrom!).toBeLessThan(IMPACT_SECONDS);
-    expect(roll.fadeTo!).toBeGreaterThan(IMPACT_SECONDS);
+  it("keeps the rolling sound going while the ball rolls, through the pins to the pit", () => {
+    for (const down of [4, 10]) {
+      const roll = buildSoundCues(down, 10).find((c) => c.sound === "roll")!;
+      expect(roll.at).toBe(0);
+      expect(roll.fadeFrom!).toBeGreaterThan(IMPACT_SECONDS + 1);
+      expect(roll.loop).toBeDefined(); // only the clean rolling part
+    }
   });
 
   it("uses the same timing for every drug; only the crash loudness follows pins down", () => {
     const cues = (drug: DrugId) => buildSoundCues(pinsDownCount(drug), TOTAL_PINS);
     const times = (drug: DrugId) => cues(drug).map((c) => [c.sound, c.at]);
-    expect(times("azithromycin")).toEqual(times("nafithromycin"));
+    expect(times("amoxiclavAzithro")).toEqual(times("miqnaf"));
     const gain = (drug: DrugId) => cues(drug).find((c) => c.sound === "strike")!.gain;
-    expect(gain("nafithromycin")).toBeGreaterThan(gain("azithromycin"));
-    expect(gain("nafithromycin")).toBeLessThanOrEqual(1);
+    expect(gain("miqnaf")).toBeGreaterThan(gain("amoxiclavAzithro"));
+    expect(gain("miqnaf")).toBeLessThanOrEqual(1);
+  });
+
+  it("brings the quiet rolling up after the set-down thud, on every throw", () => {
+    for (const down of [0, 4, 10]) {
+      const roll = buildSoundCues(down, 10).find((c) => c.sound === "roll")!;
+      expect(roll.boost!.gain).toBeGreaterThan(roll.gain * 3);
+      expect(roll.boost!.from).toBeGreaterThan(0.2); // after the thud
+      expect(roll.boost!.to).toBeLessThan(IMPACT_SECONDS); // well before the pins
+    }
+  });
+
+  it("plays no strike when no pin falls (the second throw)", () => {
+    expect(buildSoundCues(0, 10).map((c) => c.sound)).toEqual(["roll"]);
+    // The rolling sound carries on through the rack until the ball drops into the pit.
+    expect(buildSoundCues(0, 10)[0]!.fadeFrom!).toBeGreaterThan(IMPACT_SECONDS + 1);
+    expect(buildSoundCues(0, 10)[0]!.loop).toEqual([1.0, 1.6]); // only the clean, steady rolling part
+    expect(buildSoundCues(0, 10, true)).toEqual([]);
   });
 
   it("plays just the strike straight away for reduced-motion rolls", () => {
