@@ -93,16 +93,28 @@ export function Scorecard({ open, name, therapy, frame1Score, frame2Score, onCon
                 </tbody>
               </table>
 
-              {/* Only approved, supplied content; hidden until it is configured. */}
+              {/* Supplied content only; hidden if it is not configured. */}
               {WHY_MIQNAF && (
-                <div className="mt-5 w-full text-left">
-                  <h3 className="eyebrow font-body kiosk:text-base">{WHY_MIQNAF.heading}</h3>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-ink kiosk:text-[1.1rem]">
+                <section aria-labelledby="why-miqnaf" className="mt-5 w-full short:mt-2 kiosk:mt-[clamp(1rem,2.4vh,1.6rem)]">
+                  <h3 id="why-miqnaf" className="font-display text-lg font-black text-brand-navy sm:text-xl kiosk:text-[clamp(1.2rem,2.4vh,1.6rem)]">
+                    {WHY_MIQNAF.heading}
+                  </h3>
+                  <ul className="mt-3 grid gap-3 sm:grid-cols-3 short:mt-1.5 short:gap-2 kiosk:mt-[clamp(0.7rem,1.6vh,1rem)] kiosk:gap-[1rem]">
                     {WHY_MIQNAF.points.map((p) => (
-                      <li key={p}>{p}</li>
+                      <li
+                        key={p.title}
+                        className="flex flex-col items-center justify-center rounded-2xl border-t-4 border-brand-gold bg-brand-navy px-4 py-4 text-white shadow-sm short:py-2 kiosk:px-[1rem] kiosk:py-[clamp(0.8rem,2vh,1.25rem)]"
+                      >
+                        <span className="text-xs font-bold uppercase tracking-[0.16em] text-brand-gold kiosk:text-[0.95rem]">{p.title}</span>
+                        {p.text.map((line) => (
+                          <span key={line} className="mt-1 text-base font-semibold leading-snug kiosk:text-[clamp(1rem,1.9vh,1.2rem)]">
+                            {line}
+                          </span>
+                        ))}
+                      </li>
                     ))}
                   </ul>
-                </div>
+                </section>
               )}
 
 

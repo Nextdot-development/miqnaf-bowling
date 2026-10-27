@@ -160,7 +160,7 @@ describe("GameShell", () => {
     expect(within(screen.getByRole("dialog")).getByRole("heading")).toHaveTextContent("Anti-Inflammatory / Immunomodulatory Activity");
   });
 
-  it("Scenario A: first throw 4.5/10, the same ball again, then 5.5/10 on the transition", () => {
+  it("Scenario A: first throw 4.5/10, the same ball again, then 4.5/10 on the transition", () => {
     startBowling(AZI);
     expect(screen.queryByText("Frame 1 of 2")).not.toBeInTheDocument(); // no frame badge
     const rack = screen.getByRole("region", { name: "Your therapy" });
@@ -189,17 +189,17 @@ describe("GameShell", () => {
     expect(laneTags()).toEqual([]); // tags step aside while the rack is reset
     const t = screen.getByRole("region", { name: "Nice Shot!" });
     expect(t).toHaveTextContent("Despite two attempts, several CABP treatment barriers are still standing.");
-    expect(t).toHaveTextContent("5.5/10");
+    expect(t).toHaveTextContent("4.5/10");
     expect(t).toHaveTextContent("A fresh rack of treatment challenges is now set.");
     expect(t).toHaveTextContent("Let's see how a novel therapy performs.");
   });
 
-  it("offers No thanks instead of the second throw", () => {
+  it("offers only the second throw: no way to skip it", () => {
     startBowling(AZI);
     throwFromLane();
     wait(ROLL_TOTAL_MS);
-    click(within(screen.getByRole("dialog", { name: "Good attempt!" })).getByRole("button", { name: "No thanks" }));
-    expect(screen.getByRole("region", { name: "Nice Shot!" })).toBeInTheDocument();
+    const r = screen.getByRole("dialog", { name: "Good attempt!" });
+    expect(within(r).getAllByRole("button").map((b) => b.textContent?.trim())).toEqual(["Throw the ball"]);
   });
 
   it("Scenario B: first throw 5.5/10 with five pins down", () => {
@@ -220,7 +220,7 @@ describe("GameShell", () => {
     expect(screen.getByRole("heading", { name: "Novel Therapy Challenge" })).toBeInTheDocument();
     expect(screen.getAllByText("MIQNAF® (Nafithromycin)").length).toBeGreaterThan(0);
     const rack = screen.getByRole("region", { name: "Novel therapy" });
-    expect(within(rack).getByRole("button", { name: /^MIQNAF®/ })).toBeDisabled(); // presented, not chosen
+    expect(within(rack).getByRole("button", { name: /^Nafithromycin/ })).toBeDisabled(); // presented, not chosen
     expect(laneTags()).toHaveLength(10); // a fresh rack of ten
     throwFromLane();
     wait(STRIKE_RESULT_MS); // the strike shows as soon as the pins are down
@@ -234,10 +234,15 @@ describe("GameShell", () => {
     const card = screen.getByRole("dialog", { name: "CABP Challenge Results" });
     expect(card).toHaveTextContent("Dr. Asha Rao");
     const rows = within(within(card).getByRole("table")).getAllByRole("row").map((r) => r.textContent);
-    expect(rows[1]).toMatch(/^Conventional Therapy.*Amoxi-Clav \+ Azithromycin.*5\.5\/10/);
+    expect(rows[1]).toMatch(/^Conventional Therapy.*Amoxi-Clav \+ Azithromycin.*4\.5\/10/);
     expect(rows[2]).toMatch(/^MIQNAF®.*10\/10/);
     expect(card).not.toHaveTextContent(/Frame [12]/);
-    expect(within(card).queryByText(/Why MIQNAF/)).not.toBeInTheDocument(); // hidden until approved content is supplied
+    const why = within(card).getByRole("region", { name: "Why MIQNAF® Changes the Game" });
+    expect(within(why).getAllByRole("listitem").map((l) => l.textContent)).toEqual([
+      "SafetyNO QT Prolongation, GI Safety",
+      "ComplianceShort Course Monotherapy",
+      "Efficacy97% - 100% SensitivityVs CABP Pathogens",
+    ]);
 
     click(within(card).getByRole("button", { name: /^Continue/ }));
     expect(screen.getByRole("heading", { name: "Dear Dr. Asha Rao," })).toBeInTheDocument();
@@ -280,7 +285,7 @@ describe("GameShell", () => {
     wait(0);
     click(button(/^Novel Therapy Challenge/i));
     throwFromLane();
-    expect(screen.getByRole("status")).toHaveTextContent("Frame 2, MIQNAF®: 10 of 10 pins down. No pins are standing.");
+    expect(screen.getByRole("status")).toHaveTextContent("Frame 2, Nafithromycin: 10 of 10 pins down. No pins are standing.");
   });
 
   it("New game asks first, then clears the name", () => {

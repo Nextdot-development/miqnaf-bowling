@@ -38,8 +38,7 @@ export const DRUGS: Readonly<Record<DrugId, Drug>> = {
   },
   miqnaf: {
     id: "miqnaf",
-    name: "MIQNAF®",
-    fullName: "Nafithromycin",
+    name: "Nafithromycin",
     drugClass: "Novel therapy",
     description: "MIQNAF® (nafithromycin).",
   },
@@ -63,13 +62,18 @@ export const PINS: readonly Pin[] = [
   { number: 10, label: "Potency", name: ["Potency"], outcome: { amoxiclavAzithro: S, amoxiclavClarithro: D, miqnaf: D } },
 ];
 
+/**
+ * Scores as supplied, configured explicitly (never calculated from the pins).
+ * The final Frame 1 score (transition and scorecard) is the client's update of
+ * 2026-10-27: Amoxi-Clav + Azithromycin 4.5/10, Amoxi-Clav + Clarithromycin 5.5/10.
+ */
 export const FIRST_THROW_SCORE: Readonly<Record<DrugId, number | null>> = {
   amoxiclavAzithro: 4.5,
   amoxiclavClarithro: 5.5,
   miqnaf: null,
 };
 export const FRAME_1_SCORE: Readonly<Record<DrugId, number | null>> = {
-  amoxiclavAzithro: 5.5,
+  amoxiclavAzithro: 4.5,
   amoxiclavClarithro: 5.5,
   miqnaf: null,
 };
@@ -82,8 +86,6 @@ export const FIRST_THROW_COPY = {
   body: "However, several treatment barriers remain standing.",
   ask: "Would you like another chance?",
   button: "Throw the ball",
-  /** Declines the second throw (client request): straight on to the transition. */
-  skip: "No thanks",
 } as const;
 
 /** Between the frames. */
@@ -117,7 +119,15 @@ export const SCORECARD_COPY = {
   button: "Continue",
 } as const;
 
-export const WHY_MIQNAF: { heading: string; points: readonly string[] } | null = null;
+/** "Why MIQNAF® Changes the Game": the three points supplied by the client (draft, pending approval). */
+export const WHY_MIQNAF: { heading: string; points: readonly { title: string; text: readonly string[] }[] } | null = {
+  heading: "Why MIQNAF® Changes the Game",
+  points: [
+    { title: "Safety", text: ["NO QT Prolongation, GI Safety"] },
+    { title: "Compliance", text: ["Short Course Monotherapy"] },
+    { title: "Efficacy", text: ["97% - 100% Sensitivity", "Vs CABP Pathogens"] },
+  ],
+};
 
 /** Closing screen (supplied promotional copy, draft pending approval). */
 export const CLOSING_COPY = {

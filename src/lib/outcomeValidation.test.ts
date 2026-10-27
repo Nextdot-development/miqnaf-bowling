@@ -67,20 +67,24 @@ describe("configuration", () => {
   it("offers exactly the two conventional combinations, and presents MIQNAF® for Frame 2", () => {
     expect(CONVENTIONAL_BALLS.map((d) => DRUGS[d].name)).toEqual(["Amoxi-Clav + Azithromycin", "Amoxi-Clav + Clarithromycin"]);
     expect(NOVEL_BALL).toBe("miqnaf");
-    expect(DRUGS.miqnaf).toMatchObject({ name: "MIQNAF®", fullName: "Nafithromycin" });
+    expect(DRUGS.miqnaf).toMatchObject({ name: "Nafithromycin" });
     expect(ALL).toEqual(Object.keys(DRUGS));
   });
 
   it("uses the supplied scores as configured values (draft)", () => {
     expect(FIRST_THROW_SCORE.amoxiclavAzithro).toBe(4.5);
     expect(FIRST_THROW_SCORE.amoxiclavClarithro).toBe(5.5);
-    expect(FRAME_1_SCORE.amoxiclavAzithro).toBe(5.5); // supplied transition score; differs from 4.5 (pending review)
+    expect(FRAME_1_SCORE.amoxiclavAzithro).toBe(4.5); // final score (client update)
     expect(FRAME_1_SCORE.amoxiclavClarithro).toBe(5.5);
     expect(FRAME_2_SCORE).toBe(10);
   });
 
-  it("hides 'Why MIQNAF® Changes the Game' until approved content is supplied", () => {
-    expect(WHY_MIQNAF).toBeNull();
+  it("shows the three supplied 'Why MIQNAF® Changes the Game' points", () => {
+    expect(WHY_MIQNAF?.points.map((p) => [p.title, ...p.text])).toEqual([
+      ["Safety", "NO QT Prolongation, GI Safety"],
+      ["Compliance", "Short Course Monotherapy"],
+      ["Efficacy", "97% - 100% Sensitivity", "Vs CABP Pathogens"],
+    ]);
   });
 
   it("keeps the supplied closing copy and both footer texts verbatim", () => {

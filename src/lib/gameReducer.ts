@@ -26,7 +26,6 @@ export type GameAction =
   | { type: "ROLL"; at: number; instant: boolean; aim?: number | null }
   | { type: "ROLL_COMPLETE"; rollId: number }
   | { type: "TAKE_SECOND_CHANCE" }
-  | { type: "SKIP_SECOND_ATTEMPT" }
   | { type: "RACK_RESET"; at: number }
   | { type: "START_FRAME_2" }
   | { type: "SHOW_SCORECARD" }
@@ -168,11 +167,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // the pins exactly as the first throw left them. The doctor throws it.
       if (stage !== "FRAME_1_RESULT" || state.attempts !== 1) return state;
       return { ...state, phase: "ready", result: null, rollStartedAt: null, rollInstant: false, openPin: null };
-
-    case "SKIP_SECOND_ATTEMPT":
-      // The doctor declines the second throw: on to the transition, the first throw's pins left as they are.
-      if (stage !== "FRAME_1_RESULT" || state.attempts !== 1) return state;
-      return { ...state, phase: "transition", rackResetAt: null, openPin: null };
 
     case "RACK_RESET":
       // Once, on the transition: the old pins clear and a fresh rack is set.

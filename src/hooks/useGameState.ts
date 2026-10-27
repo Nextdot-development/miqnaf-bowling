@@ -50,7 +50,6 @@ export function useGameState(reducedMotion: boolean) {
       selectTherapy: (drug: DrugId) => dispatch({ type: "SELECT_THERAPY", drug }),
       startBowling: () => dispatch({ type: "START_BOWLING" }),
       startFrame2: () => dispatch({ type: "START_FRAME_2" }),
-      skipSecondThrow: () => dispatch({ type: "SKIP_SECOND_ATTEMPT" }),
       takeSecondChance: () => dispatch({ type: "TAKE_SECOND_CHANCE" }),
       showScorecard: () => dispatch({ type: "SHOW_SCORECARD" }),
       showClosing: () => dispatch({ type: "SHOW_CLOSING" }),

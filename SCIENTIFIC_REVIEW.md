@@ -18,13 +18,13 @@ All content lives in one file, so reviewers only need to check it:
 | 4 | Scenario B first throw (Amoxi-Clav + Clarithromycin) | As Scenario A, plus Potency down. Score 5.5/10 | ☐ |
 | 5 | **Basis for Scenario B's 5.5/10** | No formula supplied. It matches 5 pins down plus 0.5 for the shaking pin, and Scenario A's 4.5/10 matches the same reading; this is an observation, not an implemented rule. Scores are configured values, never calculated | ☐ confirm basis |
 | 6 | Second-attempt behaviour | Same ball; the therapy cannot be changed; every standing pin shakes but none falls (no second-attempt outcome supplied) | ☐ |
-| 7 | **Scenario A: 4.5/10 first throw vs 5.5/10 transition score** | The brief gives 5.5/10 on the transition and the scorecard for both scenarios, although Scenario A's second throw knocks nothing down. Built as supplied, as configured draft values (`FRAME_1_SCORE` in `gameData.ts`). On 2026-10-27 the client indicated 4.5/10 was intended for Scenario A; the later written brief says 5.5/10. **Needs a decision**; changing it is one value | ☐ decide |
+| 7 | **Final Frame 1 scores** | Client update (2026-10-27): Amoxi-Clav + Azithromycin 4.5/10, Amoxi-Clav + Clarithromycin 5.5/10, on the transition and the scorecard (`FRAME_1_SCORE` in `gameData.ts`). This replaces the earlier brief's 5.5/10 for both | ☐ |
 | 8 | Claim that all ten barriers fall in the MIQNAF® round | Frame 2: all 10 down, "STRIKE!", "All 10 Pins Down", score 10/10 | ☐ |
 | 9 | Frame 2 down-pin list wording | The brief's Frame 2 list shortens two names ("Bactericidal", "Anti-Inflammatory Activity"). The game shows the full Frame 1 wording for the same pins, so the rack is consistent | ☐ confirm |
 | 10 | Comparative statements | "Conventional Therapy vs Novel Therapy"; "How effective is your preferred conventional treatment strategy at knocking down these barriers?"; "Despite two attempts, several CABP treatment barriers are still standing."; "Let's see how a novel therapy performs."; the scorecard (Conventional Therapy vs MIQNAF®) | ☐ |
 | 11 | Promotional statement (closing screen) | "MIQNAF® is designed to overcome resistance and deliver compliance with a superior profile." | ☐ |
 | 12 | Prescribing-oriented call to action (closing screen) | "Please use MIQNAF® to secure maximum therapeutic benefit for your CABP patients." | ☐ |
-| 13 | "Why MIQNAF® Changes the Game" | Not shown. The brief refers to three Google Drawings images per scenario; no links or image files were supplied with the brief, so they could not be accessed. The section appears once approved content is configured (`WHY_MIQNAF`). No substitute diagrams were created | ☐ supply approved assets |
+| 13 | "Why MIQNAF® Changes the Game" (scorecard) | Three points supplied by the client (2026-10-27): Safety: "NO QT Prolongation, GI Safety"; Compliance: "Short Course Monotherapy"; Efficacy: "97% - 100% Sensitivity Vs CABP Pathogens" (`WHY_MIQNAF`). Comparative and quantitative claims: confirm the source for "97% - 100% Sensitivity" | ☐ |
 | 14 | Scientific disclaimer wording | Footer, every screen (two lines; see section 2) | ☐ |
 | 15 | Welcome copy | "CABP Challenge", "Conventional Therapy vs Novel Therapy", "Knock down the barriers" | ☐ |
 | 16 | Ball descriptions (developer-written, used for screen readers) | "Amoxicillin/clavulanate with azithromycin.", "Amoxicillin/clavulanate with clarithromycin.", "MIQNAF® (nafithromycin)." Ball class labels "Conventional therapy" / "Novel therapy" | ☐ |
@@ -44,7 +44,7 @@ All content lives in one file, so reviewers only need to check it:
 
 | Date | Item | Observed discrepancy | Reviewer | Decision |
 |------|------|----------------------|----------|----------|
-| 2026-10-27 | Scenario A score | 4.5/10 after the first throw; 5.5/10 on the transition and scorecard though the second throw knocks nothing down (item 7) | | Pending |
+| 2026-10-27 | Scenario A score | Brief said 5.5/10 on the transition and scorecard; client updated it to 4.5/10 (item 7) | Client | Built as 4.5/10 |
 | 2026-10-27 | Frame 2 pin names | Shortened names in the brief's Frame 2 list (item 9) | | Pending |
 | 2026-10-27 | Sound default | Brief: off; client: on | | Built ON per client |
 

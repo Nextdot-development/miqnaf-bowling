@@ -16,8 +16,6 @@ export interface ThrowResultCopy {
   /** The question to the doctor, set apart as the focus of the pop-up. */
   highlight?: string;
   button: string;
-  /** A second, quieter choice beside the main button (declining the second throw). */
-  secondary?: { label: string; onClick: () => void };
 }
 
 interface ThrowResultPopupProps {
@@ -140,19 +138,10 @@ export function ThrowResultPopup({ result, score, copy, tone, onAction }: ThrowR
                   ref={button}
                   type="button"
                   onClick={onAction}
-                  className="btn-primary btn-blink order-2 px-8 py-3.5 text-lg tracking-[0.06em] sm:px-10 sm:text-2xl short:py-2 short:text-lg kiosk:px-[3rem] kiosk:py-[clamp(0.9rem,2vh,1.2rem)] kiosk:text-[clamp(1.3rem,2.5vh,1.8rem)]"
+                  className="btn-primary btn-blink px-8 py-3.5 text-lg tracking-[0.06em] sm:px-10 sm:text-2xl short:py-2 short:text-lg kiosk:px-[3rem] kiosk:py-[clamp(0.9rem,2vh,1.2rem)] kiosk:text-[clamp(1.3rem,2.5vh,1.8rem)]"
                 >
                   {copy.button} <ArrowRight className="h-7 w-7" strokeWidth={3} aria-hidden />
                 </button>
-                {copy.secondary && (
-                  <button
-                    type="button"
-                    onClick={copy.secondary.onClick}
-                    className="order-1 rounded-full px-5 py-3 text-base font-semibold text-ink-muted underline-offset-4 transition-colors hover:text-brand-navy hover:underline sm:text-lg kiosk:text-[clamp(1.05rem,2vh,1.3rem)]"
-                  >
-                    {copy.secondary.label}
-                  </button>
-                )}
               </div>
 
             </div>

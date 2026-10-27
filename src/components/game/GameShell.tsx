@@ -263,7 +263,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
       <ThrowResultPopup
         result={firstResult ? state.firstThrow : null}
         score={therapy ? FIRST_THROW_SCORE[therapy] : null}
-        copy={{ heading: FIRST_THROW_COPY.heading, lines: [FIRST_THROW_COPY.body], highlight: FIRST_THROW_COPY.ask, button: FIRST_THROW_COPY.button, secondary: { label: FIRST_THROW_COPY.skip, onClick: game.skipSecondThrow } }}
+        copy={{ heading: FIRST_THROW_COPY.heading, lines: [FIRST_THROW_COPY.body], highlight: FIRST_THROW_COPY.ask, button: FIRST_THROW_COPY.button }}
         tone="attempt"
         onAction={game.takeSecondChance}
       />

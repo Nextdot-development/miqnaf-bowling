@@ -145,13 +145,10 @@ describe("Frame 1", () => {
     expect(sessionStage(gameReducer(ready2, { type: "ROLL", at: 3000, instant: false }))).toBe("SECOND_ATTEMPT");
   });
 
-  it("the doctor may decline the second throw: straight to the transition", () => {
-    const s = gameReducer(firstThrow("amoxiclavAzithro"), { type: "SKIP_SECOND_ATTEMPT" });
-    expect(sessionStage(s)).toBe("TRANSITION");
-    expect(s.secondThrow).toBeNull();
-    expect(gameReducer(s, { type: "ROLL", at: 9000, instant: true })).toBe(s); // no throw afterwards
-    const ready1 = ready("amoxiclavAzithro");
-    expect(gameReducer(ready1, { type: "SKIP_SECOND_ATTEMPT" })).toBe(ready1); // only after the first throw
+  it("the second throw cannot be skipped: no transition before it", () => {
+    const first = firstThrow("amoxiclavAzithro");
+    expect(gameReducer(first, { type: "START_FRAME_2" })).toBe(first);
+    expect(gameReducer(first, { type: "RACK_RESET", at: 4000 })).toBe(first);
   });
 
   it("ignores a stale roll completion", () => {
