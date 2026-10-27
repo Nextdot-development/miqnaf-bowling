@@ -3,10 +3,10 @@
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  CONVENTIONAL_BALLS,
   DRUGS,
   FIRST_THROW_COPY,
   FIRST_THROW_SCORE,
-  THERAPY_HEADING,
   FRAME_1_SCORE,
   FRAME_2_SCORE,
   GAME_TITLE,
@@ -150,7 +150,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
   // The card at the top of the lane before each frame's throw, with a throw button.
   const prompt: LanePrompt | undefined =
     stage === "THERAPY_SELECTION"
-      ? { greeting: `Hi Dr. ${state.playerName},`, eyebrow: THERAPY_HEADING, text: "Tap a ball to choose your conventional therapy" }
+      ? { greeting: `Hi Dr. ${state.playerName},`, text: "Tap a ball to choose your conventional therapy" }
       : stage === "FRAME_1_READY" && therapy
       ? { text: DRUGS[therapy].name }
       : stage === "FRAME_2_READY"
@@ -158,6 +158,11 @@ export function GameShell({ force2D = false }: GameShellProps) {
         : undefined;
 
   const onLane = !(stage === "WELCOME" || OFF_LANE.includes(stage));
+
+  // The ball return beside the lane: both conventional balls while choosing;
+  // in Frame 1 the one not being thrown; in Frame 2 it is empty (Nafithromycin is the only ball).
+  const rackBalls =
+    state.frame === 2 ? [] : stage === "THERAPY_SELECTION" || !therapy ? CONVENTIONAL_BALLS : CONVENTIONAL_BALLS.filter((d) => d !== therapy);
 
   // The greeting pop-up shows once per doctor.
   const [introSeen, setIntroSeen] = useState(false);
@@ -191,8 +196,8 @@ export function GameShell({ force2D = false }: GameShellProps) {
             </AnimatePresence>
             {onLane && (
               // Full-width lane. On the kiosk the ball rack floats over its left
-              // edge and the pin key over its right edge; on smaller screens they
-              // sit above and below it.
+              // edge and the pin key over its right edge; on smaller screens the
+              // prompt sits above the lane and both panels below it.
               <div className="relative flex flex-col gap-5 kiosk:min-h-0 kiosk:flex-1">
                 <GameStage
                   phase={state.phase}
@@ -209,8 +214,10 @@ export function GameShell({ force2D = false }: GameShellProps) {
                   onPinSelect={onPinSelect}
                   lane={lane}
                   onRoll={game.roll}
+                  rackBalls={rackBalls}
+                  onRackSelect={stage === "THERAPY_SELECTION" ? chooseTherapy : undefined}
                   force2D={force2D}
-                  className="aspect-[4/3] w-full sm:aspect-[16/9] kiosk:aspect-auto kiosk:min-h-0 kiosk:flex-1"
+                  className="aspect-[4/3] w-full sm:aspect-[16/9] short:aspect-auto short:h-[calc(100dvh-1.5rem)] kiosk:aspect-auto kiosk:min-h-0 kiosk:flex-1"
                   wrapperClassName="kiosk:min-h-0 kiosk:flex-1"
                 />
                 <AccessiblePinList lane={lane} showOutcome={showStatus} />
@@ -240,12 +247,12 @@ export function GameShell({ force2D = false }: GameShellProps) {
                   frame={state.frame}
                   selectedDrug={state.selectedDrug}
                   onSelect={chooseTherapy}
-                  className="order-first rounded-3xl bg-brand-navy p-4 kiosk:absolute kiosk:left-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(22rem,24%)] kiosk:bg-transparent kiosk:p-0"
+                  className="rounded-3xl bg-brand-navy p-4 kiosk:absolute kiosk:left-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(22rem,24%)] kiosk:bg-transparent kiosk:p-0"
                 />
                 <PinKey
                   onOpenPin={game.openPin}
                   disabled={state.phase === "rolling"}
-                  className="kiosk:absolute kiosk:right-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(24rem,25%)]"
+                  className="kiosk:absolute kiosk:bottom-[1.5rem] kiosk:right-[1.5rem] kiosk:top-[1.5rem] kiosk:z-20 kiosk:w-[min(24rem,25%)]"
                 />
               </div>
             )}

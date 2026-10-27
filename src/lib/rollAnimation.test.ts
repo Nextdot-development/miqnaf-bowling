@@ -52,6 +52,17 @@ describe("roll animation", () => {
     }
   });
 
+  it("gives every throw its own line, even with the same swipe", () => {
+    for (const drug of CONVENTIONAL_BALLS) {
+      const path = (seed: number) => [0.3, 0.5, 0.7, 0.85].map((f) => ballPose(BALL_TRAVEL_MS * f, ballLineFor(seed, drug, 0)).x);
+      const throws = [101.2, 2002.7, 33333.3, 48211.9, 777.7, 90210.4].map(path);
+      // Almost every throw takes a line of its own, and together they spread across the lane.
+      expect(new Set(throws.map((t) => t.map((x) => x.toFixed(2)).join())).size).toBeGreaterThanOrEqual(5);
+      const mids = throws.map((t) => t[1]!);
+      expect(Math.max(...mids) - Math.min(...mids)).toBeGreaterThan(0.15);
+    }
+  });
+
   it("never rolls the ball through a pin that stays up, on any throw or swipe", () => {
     for (const drug of CONVENTIONAL_BALLS)
       for (const lane of throwsFor(drug))
@@ -132,8 +143,8 @@ describe("roll animation", () => {
         expect(down.lift).toBeLessThan(0); // dropped into the pit
       }
       // It stays where it came to rest: no fading away over time.
-      const later = pinPose(n, true, 9000);
-      for (const [k, v] of Object.entries(pinPose(n, true, 6000))) expect(v).toBeCloseTo(later[k as keyof typeof later], 6);
+      const later = pinPose(n, true, BALL_TRAVEL_MS + 7000);
+      for (const [k, v] of Object.entries(pinPose(n, true, BALL_TRAVEL_MS + 4000))) expect(v).toBeCloseTo(later[k as keyof typeof later], 6);
     }
   });
 

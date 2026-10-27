@@ -1,18 +1,21 @@
 "use client";
 
 import { Environment, Lightformer } from "@react-three/drei";
-import { Canvas, useThree } from "@react-three/fiber";
-import { useEffect, useRef, type MutableRefObject } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useContext, useEffect, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import { CONVENTIONAL_BALLS } from "@/data/gameData";
 import { CAMERA, FRONT_ROW_Z, introBallX, verticalFovFor } from "@/lib/laneLayout";
+import { ballLineFor, ballPose, STRAIGHT_LINE } from "@/lib/rollAnimation";
 import { BALL_COLORS } from "@/lib/drugVisuals";
 import type { DrugId, GamePhase, LanePins, Pin } from "@/types/game";
 import { BowlingBall } from "./BowlingBall";
+import { BallReturn } from "./BallReturn";
 import { BowlingLane } from "./BowlingLane";
 import { PinDeck } from "./PinDeck";
 import { PinSetter } from "./PinSetter";
-import { SceneTimelineContext, type SceneTimeline } from "./sceneClock";
+import { elapsedMs, SceneTimelineContext, type SceneTimeline } from "./sceneClock";
+import { BALL_TRAVEL_MS } from "@/lib/timing";
 
 export interface BowlingSceneProps {
   phase: GamePhase;
@@ -38,20 +41,68 @@ export interface BowlingSceneProps {
   aimRef: MutableRefObject<number>;
   /** True while the player is dragging the ball (renders every frame). */
   aiming: boolean;
+  /** Balls waiting on the ball return beside the lane. */
+  rackBalls?: readonly DrugId[];
+  /** Choosing a therapy: tapping a ball on the return picks it. */
+  onRackSelect?: (drug: DrugId) => void;
 }
 
-/** Fixed camera: same position and framing for every roll. */
-function CameraRig() {
+const smooth01 = (v: number) => {
+  const k = Math.min(1, Math.max(0, v));
+  return k * k * (3 - 2 * k);
+};
+const restPos = new THREE.Vector3(...CAMERA.position);
+const restLook = new THREE.Vector3(...CAMERA.target);
+const camPos = new THREE.Vector3();
+const camLook = new THREE.Vector3();
+const chasePos = new THREE.Vector3();
+const chaseLook = new THREE.Vector3();
+
+/**
+ * The camera. At rest (choosing, aiming, results) it holds its fixed framing,
+ * which the pin tags and the swipe control are drawn for. While the ball
+ * rolls it drops in low behind the ball and chases it down the lane, ending in
+ * a close-up of the pin deck, with a jolt as the ball smashes in.
+ */
+function CameraRig({ hits, strike }: { hits: boolean; strike: boolean }) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
+  const timeline = useContext(SceneTimelineContext);
+  const reduce = typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   useEffect(() => {
-    camera.position.set(...CAMERA.position);
     camera.fov = verticalFovFor(size.width / Math.max(size.height, 1));
-    camera.near = 0.1;
+    camera.near = 0.05;
     camera.far = 40;
-    camera.lookAt(...CAMERA.target);
     camera.updateProjectionMatrix();
   }, [camera, size.width, size.height]);
+
+  useFrame(() => {
+    const t = timeline?.current;
+    camPos.copy(restPos);
+    camLook.copy(restLook);
+    if (t && t.phase === "rolling" && !reduce) {
+      const ms = elapsedMs(t, performance.now());
+      const line = t.lineSeed === null ? STRAIGHT_LINE : ballLineFor(t.lineSeed, t.lineDrug, t.lineAim);
+      const b = ballPose(Math.min(ms, BALL_TRAVEL_MS + 450), line);
+      // Low behind the ball; it eases to a stop short of the pins and holds on the deck.
+      const stop = FRONT_ROW_Z + 0.55;
+      const z = stop + 0.3 * Math.log1p(Math.exp((b.z - stop) / 0.3));
+      // It follows the ball's line loosely, so a late hook doesn't swing the view.
+      chasePos.set(b.x * 0.35, 0.5, z + 1.45);
+      chaseLook.set(b.x * 0.2, 0.12, z - 2.4);
+      const k = smooth01(ms / 450);
+      camPos.lerpVectors(restPos, chasePos, k);
+      camLook.lerpVectors(restLook, chaseLook, k);
+      const since = ms - BALL_TRAVEL_MS;
+      if (hits && since > 0 && since < 420) {
+        const amp = (strike ? 0.045 : 0.02) * Math.exp(-since / 120);
+        camPos.x += amp * Math.sin(since * 0.21);
+        camPos.y += amp * Math.sin(since * 0.33 + 1.3);
+      }
+    }
+    camera.position.copy(camPos);
+    camera.lookAt(camLook);
+  });
   return null;
 }
 
@@ -123,13 +174,13 @@ function Lights() {
         position={[0, 2.3, FRONT_ROW_Z + 0.9]}
         angle={0.72}
         penumbra={0.9}
-        intensity={7}
+        intensity={9}
         decay={1.5}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0003}
       />
-      <Environment resolution={256} frames={1} environmentIntensity={0.45}>
+      <Environment resolution={256} frames={1} environmentIntensity={0.6}>
         <Lightformer form="rect" intensity={2.4} position={[0, 5, -4]} rotation-x={Math.PI / 2} scale={[3, 12, 1]} />
         <Lightformer form="rect" intensity={0.8} position={[-4, 2, -3]} rotation-y={Math.PI / 2} scale={[10, 2, 1]} />
         <Lightformer form="rect" intensity={0.8} position={[4, 2, -3]} rotation-y={-Math.PI / 2} scale={[10, 2, 1]} />
@@ -140,7 +191,7 @@ function Lights() {
 }
 
 export default function BowlingScene(props: BowlingSceneProps) {
-  const { phase, ballDrug, lane, rollStartedAt, lineSeed, lineAim = null, lineDrug, rackResetAt = null, interactive, onPinSelect, onContextLost, onReady, aimRef, aiming } =
+  const { phase, ballDrug, lane, rollStartedAt, lineSeed, lineAim = null, lineDrug, rackResetAt = null, interactive, onPinSelect, onContextLost, onReady, aimRef, aiming, rackBalls = [], onRackSelect } =
     props;
 
   // The second throw is at the rack exactly as the first left it: no sweep (client request).
@@ -163,8 +214,8 @@ export default function BowlingScene(props: BowlingSceneProps) {
           onReady?.();
         }}
       >
-        <CameraRig />
-        <Invalidator deps={[phase, ballDrug, lane, rollStartedAt, aiming]} />
+        <CameraRig hits={Object.values(lane).includes("down")} strike={strike} />
+        <Invalidator deps={[phase, ballDrug, lane, rollStartedAt, aiming, rackBalls.join()]} />
         <ContextLossWatcher onLost={onContextLost} />
         <Lights />
         <BowlingLane />
@@ -174,6 +225,7 @@ export default function BowlingScene(props: BowlingSceneProps) {
           onPinSelect={onPinSelect}
         />
         <PinSetter />
+        {phase !== "intro" && <BallReturn balls={rackBalls} onSelect={onRackSelect} />}
         {/* Intro: Player 1's two balls line up. In play, only the ball being rolled is on the lane. */}
         {phase === "intro"
           ? CONVENTIONAL_BALLS.map((id, i) => <BowlingBall key={id} color={BALL_COLORS[id]} offsetX={introBallX(i, CONVENTIONAL_BALLS.length)} still />)

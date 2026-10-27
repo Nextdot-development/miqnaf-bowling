@@ -5,7 +5,6 @@ import {
   DISCLAIMER,
   DRUGS,
   FIRST_THROW_SCORE,
-  FOOTER_NOTE,
   FRAME_1_SCORE,
   FRAME_2_SCORE,
   NOVEL_BALL,
@@ -93,9 +92,6 @@ describe("configuration", () => {
       "MIQNAF® is designed to overcome resistance and deliver compliance with a superior profile.",
       "Please use MIQNAF® to secure maximum therapeutic benefit for your CABP patients.",
     ]);
-    expect(FOOTER_NOTE).toBe(
-      "For scientific discussion among healthcare professionals. Pin outcomes are a teaching model built from published in vitro and clinical data. They do not replace the prescribing information, local antibiograms or clinical judgement.",
-    );
     expect(DISCLAIMER).toBe(
       "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company.",
     );

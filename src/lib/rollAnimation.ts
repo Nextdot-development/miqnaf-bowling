@@ -58,6 +58,14 @@ export interface BallPose {
 export interface BallLine {
   bulge: number;
   pocket: number;
+  /** Where the swing is widest: lower peaks early and drifts back slowly, higher holds out longer and hooks late. */
+  peak?: number;
+  /**
+   * A swiped throw: the ball sets off along the swipe and holds that line,
+   * hooking into the rack late. Higher is a later, sharper hook. (`bulge` is
+   * then how far out it drifts.)
+   */
+  hook?: number;
 }
 
 /** A straight line down the middle (the resting ball, and the default). */
@@ -68,10 +76,19 @@ const CLEAR = BALL_RADIUS + PIN_MAX_RADIUS * 0.92;
 /** The pocket: half-way between the head pin and pin 3. */
 const POCKET_X = PIN_SPACING / 4;
 
-export function rackLineX(drug: DrugId): number {
+/** How far across the rack the aim can move the ball's entry (full swipe left or right). */
+const AIM_ENTRY = 0.35;
+
+/**
+ * Where the ball enters the rack. Only lines that meet the pins the throw
+ * knocks down and stay clear of the pins that stay up are allowed; a swipe
+ * (`aim`, -1 to 1) picks the allowed line nearest where it was aimed.
+ */
+export function rackLineX(drug: DrugId, aim: number | null = null): number {
   const lane = rollLane(drug);
-  // A strike: into the pocket, between the head pin and pin 3, as a real strike ball goes.
-  if (PINS.every(({ number: n }) => lane[n] === "down")) return POCKET_X;
+  // A strike: into the pocket, between the head pin and pin 3 (or pin 2, for a ball aimed left), as a real strike ball goes.
+  if (PINS.every(({ number: n }) => lane[n] === "down")) return aim !== null && aim < -0.2 ? -POCKET_X : POCKET_X;
+  const want = aim === null ? null : Math.max(-1, Math.min(1, aim)) * AIM_ENTRY;
   let best = { x: 0, hits: -1, offset: Infinity };
   for (let i = -8; i <= 8; i++) {
     const x = (i * PIN_SPACING) / 8;
@@ -82,9 +99,16 @@ export function rackLineX(drug: DrugId): number {
       if (lane[n] !== "down" && d < CLEAR) ok = false;
       if (lane[n] === "down" && d < CLEAR + 0.03) hits++;
     }
+    if (!ok) continue;
+    if (want !== null) {
+      // Aimed: the allowed line nearest the aim that still meets a pin it knocks down.
+      const offset = Math.abs(x - want) - (hits > 0 ? 10 : 0);
+      if (offset < best.offset) best = { x, hits, offset };
+      continue;
+    }
     // Prefer more pins met, then a line just off the centre (the pocket).
     const offset = Math.abs(Math.abs(x) - 0.12);
-    if (ok && (hits > best.hits || (hits === best.hits && offset < best.offset))) best = { x, hits, offset };
+    if (hits > best.hits || (hits === best.hits && offset < best.offset)) best = { x, hits, offset };
   }
   return best.x;
 }
@@ -101,25 +125,37 @@ export function ballLineFor(seed: number, drug: DrugId | null = null, aim: numbe
   const coin = rand() < 0.5 ? -1 : 1;
   const bulge = 0.14 + rand() * 0.16; // 0.14 to 0.30 out to one side
   const pocket = 0.03 + rand() * 0.04;
+  // Every throw has its own shape: how wide it swings and how late it hooks back.
+  const swing = 0.05 + rand() * 0.15;
+  const peak = 1.1 + rand() * 0.9;
   if (drug && aim !== null && Number.isFinite(aim)) {
-    // Thrown by a swipe: the ball heads out the way the finger went (further
-    // the more angled the swipe), then hooks back into its line through the rack.
+    // Thrown by a swipe: the ball sets off the way the finger went and holds
+    // that line (further out the more angled the swipe), then hooks late into
+    // the rack at the point nearest the aim.
     const a = Math.max(-1, Math.min(1, aim));
     const side = Math.abs(a) < 0.06 ? coin : Math.sign(a);
-    return { bulge: side * (0.03 + Math.abs(a) * 0.3 + rand() * 0.03), pocket: rackLineX(drug) };
+    const drift = Math.min(0.5, Math.abs(a) * 0.42 + swing);
+    return { bulge: side * drift, pocket: rackLineX(drug, a), hook: 2 + rand() * 1.5 };
   }
   if (drug) {
     const x = rackLineX(drug);
     // Swings out on the side it enters the rack, so it never cuts across the head pin.
     const side = x === 0 ? coin : Math.sign(x);
-    return { bulge: side * bulge, pocket: x };
+    return { bulge: side * bulge, pocket: x, peak };
   }
-  return { bulge: coin * bulge, pocket: -coin * pocket }; // hooks back across into the pocket
+  return { bulge: coin * bulge, pocket: -coin * pocket, peak }; // hooks back across into the pocket
 }
 
 
+/** u - u^(k+1), scaled to peak at 1: straight out, then a late hook back. */
+function hookShape(u: number, k: number): number {
+  const top = Math.pow(1 / (k + 1), 1 / k);
+  return (u - Math.pow(u, k + 1)) / (top * (k / (k + 1)));
+}
+
 function lineX(line: BallLine, u: number): number {
-  if (u <= 1) return line.bulge * Math.sin(Math.PI * Math.pow(u, 1.5)) + line.pocket * u * u;
+  if (u <= 1 && line.hook) return line.bulge * hookShape(u, line.hook) + line.pocket * u * u;
+  if (u <= 1) return line.bulge * Math.sin(Math.PI * Math.pow(u, line.peak ?? 1.5)) + line.pocket * u * u;
   // Through the pins: straight on along its line, between the pins that stay up.
   return line.pocket;
 }
@@ -316,12 +352,16 @@ export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number, wobbles
 }
 
 export const AIM_REACH = 0.35;
-export const AIM_BLEND_MS = 220;
+/** The swipe's forward nudge eases out over this long, so the ball picks up its roll without a hitch. */
+export const AIM_BLEND_MS = 600;
 
 export function aimOffset(phase: GamePhase, elapsedMs: number, aim: number): number {
   const a = Math.min(1, Math.max(0, aim));
   if (phase === "ready") return a * AIM_REACH;
-  if (phase === "rolling") return a * AIM_REACH * Math.max(0, 1 - elapsedMs / AIM_BLEND_MS);
+  if (phase === "rolling") {
+    const k = Math.min(1, Math.max(0, elapsedMs / AIM_BLEND_MS));
+    return a * AIM_REACH * (1 - k * k * (3 - 2 * k));
+  }
   return 0;
 }
 

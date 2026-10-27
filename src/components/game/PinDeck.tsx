@@ -15,14 +15,15 @@ interface PinDeckProps {
 
 export function PinDeck({ lane, interactive, onPinSelect }: PinDeckProps) {
   const geometry = useMemo(() => createPinGeometry(), []);
-  const skin = useMemo(() => createPinTexture(), []);
+  // Each pin carries its own number.
+  const skins = useMemo(() => new Map(PINS.map((p) => [p.number, createPinTexture(p.number)])), []);
 
   useEffect(
     () => () => {
       geometry.dispose();
-      skin.dispose();
+      skins.forEach((s) => s.dispose());
     },
-    [geometry, skin],
+    [geometry, skins],
   );
 
   return (
@@ -34,7 +35,7 @@ export function PinDeck({ lane, interactive, onPinSelect }: PinDeckProps) {
             key={pin.number}
             pin={pin}
             geometry={geometry}
-            skin={skin}
+            skin={skins.get(pin.number)!}
             status={status}
             interactive={interactive}
             onSelect={onPinSelect}

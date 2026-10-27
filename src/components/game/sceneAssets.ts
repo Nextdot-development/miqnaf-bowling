@@ -88,18 +88,40 @@ export function createWoodTexture(): THREE.CanvasTexture {
   return tex;
 }
 
-/** Pin skin: white with two red neck stripes (v = height fraction). */
-export function createPinTexture(): THREE.CanvasTexture {
-  const H = 512;
-  const { c, ctx } = canvas(16, H);
+/** Where the pin's number is painted (height fractions): the neck and head, which show above the pin in front. */
+const NUMBER_FROM = 0.72;
+const NUMBER_TO = 0.96;
+
+/**
+ * Pin skin: white with two red stripes below the neck and the pin's number
+ * painted on the neck and head (v = height fraction; u = around the pin, with
+ * u = 0 facing the bowler). The number is painted front and back.
+ */
+export function createPinTexture(number: number): THREE.CanvasTexture {
+  const W = 512;
+  const H = 1024;
+  const { c, ctx } = canvas(W, H);
   ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, 16, H);
+  ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = SCENE.pinStripe;
-  const band = (from: number, to: number) => ctx.fillRect(0, (1 - to) * H, 16, (to - from) * H);
-  band(0.655, 0.675);
-  band(0.69, 0.71);
+  const band = (from: number, to: number) => ctx.fillRect(0, (1 - to) * H, W, (to - from) * H);
+  band(0.6, 0.62);
+  band(0.635, 0.655);
+
+  // The number: bold navy, condensed to fit the front of the neck.
+  const top = (1 - NUMBER_TO) * H;
+  const tall = (NUMBER_TO - NUMBER_FROM) * H;
+  ctx.fillStyle = SCENE.pinNumber;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `900 ${Math.round(tall * 0.95)}px "Arial Black", "Helvetica Neue", Arial, sans-serif`;
+  const label = String(number);
+  for (const x of [0, W / 2, W]) ctx.fillText(label, x, top + tall / 2, W * 0.4);
+
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
   return tex;
 }
 

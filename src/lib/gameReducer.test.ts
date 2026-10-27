@@ -201,9 +201,9 @@ describe("reduced motion and new sessions", () => {
     expect(fresh).toMatchObject({ playerName: "", therapy: null, firstThrow: null, secondThrow: null, novelThrow: null, soundOn: false, rollId: done.rollId });
   });
 
-  it("pin cards open on the lane, but not mid-roll or on the full screens", () => {
+  it("pin cards open on the lane (also while choosing), but not mid-roll", () => {
     expect(gameReducer(ready("amoxiclavAzithro"), { type: "OPEN_PIN", pin: 3 }).openPin).toBe(3);
-    expect(gameReducer(named, { type: "OPEN_PIN", pin: 3 })).toBe(named);
+    expect(gameReducer(named, { type: "OPEN_PIN", pin: 3 }).openPin).toBe(3); // also while choosing a therapy
     const rolling = gameReducer(ready("amoxiclavAzithro"), { type: "ROLL", at: 1000, instant: false });
     expect(gameReducer(rolling, { type: "OPEN_PIN", pin: 3 })).toBe(rolling);
   });

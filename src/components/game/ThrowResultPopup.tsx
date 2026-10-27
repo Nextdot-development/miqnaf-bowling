@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import { DRUGS, PINS, SCORE_OUT_OF } from "@/data/gameData";
@@ -8,6 +8,7 @@ import { richToPlain } from "@/lib/gameLogic";
 import type { PinNumber, RollResult } from "@/types/game";
 import { BrandLogo } from "./BrandLogo";
 import { Confetti } from "./Confetti";
+import { GamePanel } from "./GamePanel";
 
 export interface ThrowResultCopy {
   heading: string;
@@ -24,13 +25,18 @@ interface ThrowResultPopupProps {
   /** Configured score for this throw (never calculated here). */
   score: number | null;
   copy: ThrowResultCopy;
-  /** "strike": all pins down, heading in navy; "attempt": pins left, heading in red. */
+  /** "strike": all pins down; "attempt": pins left. */
   tone: "attempt" | "strike";
   onAction: () => void;
 }
 
+/**
+ * After a throw, as an arcade panel: the heading in the header band, then the
+ * therapy, the configured score (big), the pins still standing, the message
+ * and question; the button sits below the panel. Pin states come from the
+ * configured outcome matrix; the score is configured, never calculated.
+ */
 export function ThrowResultPopup({ result, score, copy, tone, onAction }: ThrowResultPopupProps) {
-  const reduce = useReducedMotion();
   const button = useRef<HTMLButtonElement>(null);
   const headingId = useId();
 
@@ -45,108 +51,80 @@ export function ThrowResultPopup({ result, score, copy, tone, onAction }: ThrowR
   return (
     <AnimatePresence>
       {result && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: reduce ? 0 : 0.2 }}
+        <GamePanel
+          titleId={headingId}
+          title={copy.heading}
+          overlay={strike ? <Confetti /> : undefined}
+          actions={
+            <button
+              ref={button}
+              type="button"
+              onClick={onAction}
+              className="btn-primary btn-blink px-10 py-3.5 text-lg tracking-[0.06em] sm:px-12 sm:text-2xl short:py-2 short:text-lg kiosk:px-[3.25rem] kiosk:py-[clamp(0.9rem,2vh,1.2rem)] kiosk:text-[clamp(1.3rem,2.5vh,1.8rem)]"
+            >
+              {copy.button} <ArrowRight className="h-7 w-7" strokeWidth={3} aria-hidden />
+            </button>
+          }
         >
-          <div className="absolute inset-0 bg-ink/60 backdrop-blur-[2px]" aria-hidden />
-          {/* A strike: confetti over the pop-up (skipped with reduced motion). */}
-          {strike && <Confetti />}
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={headingId}
-            className="relative max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-surface text-center shadow-lift kiosk:max-w-[52rem]"
-            initial={reduce ? false : { scale: 0.9, opacity: 0, y: 16 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 22 }}
-          >
-            <div className="tricolour-rule h-2" aria-hidden />
-            <div className="flex flex-col items-center px-6 py-7 sm:px-12 sm:py-9 short:py-3 kiosk:px-[3.25rem] kiosk:py-[clamp(1.5rem,3.4vh,2.5rem)]">
-              <BrandLogo logo="productLogo" className="mb-4 h-9 sm:h-11 short:mb-1.5 short:h-6 kiosk:mb-[clamp(0.8rem,2vh,1.25rem)] kiosk:h-[clamp(2.6rem,5vh,3.6rem)]" />
-              {/* 1. The result */}
-              <p className="eyebrow font-body kiosk:text-base">{DRUGS[result.drug].name}</p>
-              <h2
-                id={headingId}
-                className={`mt-1.5 font-black uppercase leading-none tracking-tight short:text-[1.6rem] ${
-                  strike
-                    ? "text-[2.6rem] text-brand-navy sm:text-6xl kiosk:text-[clamp(3rem,7vh,4.6rem)]"
-                    : "text-[2.1rem] text-brand-red sm:text-5xl kiosk:text-[clamp(2.4rem,5.4vh,3.6rem)]"
-                }`}
-              >
-                {copy.heading}
-              </h2>
-              {score !== null && (
-                <p className="mt-3 inline-flex items-baseline gap-2 rounded-full bg-brand-navy px-5 py-1 text-white short:mt-1.5 kiosk:mt-[0.9rem] kiosk:px-[1.4rem]">
-                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-brand-gold kiosk:text-sm">Score</span>
-                  <span className="font-display text-xl font-black kiosk:text-[1.7rem]">
-                    {score}/{SCORE_OUT_OF}
-                  </span>
-                </p>
-              )}
-              {strike &&
-                copy.lines.map((line) => (
-                  <p key={line} className="mt-2 text-lg font-bold text-brand-navy sm:text-xl kiosk:text-[clamp(1.2rem,2.4vh,1.6rem)]">
+          <span className="game-panel-logo">
+            <BrandLogo logo="productLogo" className="h-8 sm:h-10 short:h-6 kiosk:h-[clamp(2.2rem,4.4vh,3rem)]" />
+          </span>
+          <p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] text-white/70 short:mt-1.5 kiosk:text-base">{DRUGS[result.drug].name}</p>
+
+          {score !== null && (
+            <div className="mt-2 short:mt-1">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/60 kiosk:text-sm">Score</p>
+              <p className="font-display font-black leading-none text-white" style={{ textShadow: "0 4px 0 rgb(0 0 0 / 0.4)" }}>
+                <span className="text-6xl sm:text-7xl short:text-5xl kiosk:text-[clamp(4rem,9vh,6rem)]">{score}</span>
+                <span className="text-2xl text-brand-gold kiosk:text-[clamp(1.6rem,3.4vh,2.3rem)]">/{SCORE_OUT_OF}</span>
+              </p>
+            </div>
+          )}
+          {strike &&
+            copy.lines.map((line) => (
+              <p key={line} className="mt-2 font-display text-xl font-black uppercase text-brand-gold sm:text-2xl kiosk:text-[clamp(1.3rem,2.6vh,1.8rem)]">
+                {line}
+              </p>
+            ))}
+
+          {!strike && standing.length > 0 && (
+            <>
+              <div className="game-panel-rule mt-5 short:mt-2 kiosk:mt-[clamp(1rem,2.4vh,1.5rem)]" />
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-white/60 short:mt-2 kiosk:text-sm">
+                Still standing · {standing.length} of {result.totalPins}
+              </p>
+              <ul aria-label="Still standing" className="mt-3 flex flex-wrap justify-center gap-2 short:mt-1.5 kiosk:mt-[0.8rem] kiosk:gap-[0.55rem]">
+                {standing.map((p) => (
+                  <li
+                    key={p.number}
+                    className="inline-flex items-center gap-2 rounded-full bg-white/10 py-1 pl-1 pr-3 text-sm font-semibold text-white ring-1 ring-white/15 kiosk:text-[1rem]"
+                  >
+                    <span className="pin-chip-num shrink-0 !bg-brand-gold !text-brand-navy">{p.number}</span>
+                    {richToPlain(p.name)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {!strike && (
+            <>
+              <div className="game-panel-rule mt-5 short:mt-2 kiosk:mt-[clamp(1rem,2.4vh,1.5rem)]" />
+              <div className="mt-4 short:mt-2">
+                {copy.lines.map((line) => (
+                  <p key={line} className="text-base text-white/75 sm:text-lg kiosk:text-[clamp(1.05rem,2vh,1.25rem)]">
                     {line}
                   </p>
                 ))}
-
-              {/* 2. The pins */}
-              {!strike && (
-                standing.length > 0 && (
-                  <div className="mt-6 w-full rounded-2xl bg-surface-sunken px-4 py-4 short:mt-2 short:py-2 kiosk:mt-[clamp(1.1rem,2.6vh,1.75rem)] kiosk:px-[1.4rem] kiosk:py-[clamp(0.9rem,2vh,1.25rem)]">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink-soft kiosk:text-sm">
-                      Still standing · {standing.length} of {result.totalPins}
-                    </p>
-                    <ul aria-label="Still standing" className="mt-3 flex flex-wrap justify-center gap-2 short:mt-1.5 kiosk:mt-[0.8rem] kiosk:gap-[0.55rem]">
-                      {standing.map((p) => (
-                        <li
-                          key={p.number}
-                          className="inline-flex items-center gap-2 rounded-full bg-surface py-1 pl-1 pr-3 text-sm font-semibold text-brand-navy shadow-sm ring-1 ring-line kiosk:text-[1rem]"
-                        >
-                          <span className="pin-chip-num shrink-0">{p.number}</span>
-                          {richToPlain(p.name)}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )
-              )}
-
-              {/* 3. The message and the question */}
-              {!strike && (
-                <div className="mt-6 short:mt-2 kiosk:mt-[clamp(1.1rem,2.6vh,1.75rem)]">
-                  {copy.lines.map((line) => (
-                    <p key={line} className="text-base text-ink-muted sm:text-lg kiosk:text-[clamp(1.05rem,2vh,1.25rem)]">
-                      {line}
-                    </p>
-                  ))}
-                  {copy.highlight && (
-                    <p className="mt-2 font-display text-2xl font-black text-brand-navy sm:text-3xl short:text-xl kiosk:text-[clamp(1.6rem,3.4vh,2.3rem)]">
-                      {copy.highlight}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* 4. The actions */}
-              <div className="sticky bottom-0 z-10 -mb-2 mt-6 flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-3 bg-surface pb-2 short:mt-2 kiosk:mt-[clamp(1.1rem,2.6vh,1.75rem)]">
-                <button
-                  ref={button}
-                  type="button"
-                  onClick={onAction}
-                  className="btn-primary btn-blink px-8 py-3.5 text-lg tracking-[0.06em] sm:px-10 sm:text-2xl short:py-2 short:text-lg kiosk:px-[3rem] kiosk:py-[clamp(0.9rem,2vh,1.2rem)] kiosk:text-[clamp(1.3rem,2.5vh,1.8rem)]"
-                >
-                  {copy.button} <ArrowRight className="h-7 w-7" strokeWidth={3} aria-hidden />
-                </button>
+                {copy.highlight && (
+                  <p className="mt-2 font-display text-2xl font-black text-white sm:text-3xl short:text-xl kiosk:text-[clamp(1.6rem,3.4vh,2.3rem)]">
+                    {copy.highlight}
+                  </p>
+                )}
               </div>
-
-            </div>
-          </motion.div>
-        </motion.div>
+            </>
+          )}
+        </GamePanel>
       )}
     </AnimatePresence>
   );

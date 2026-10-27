@@ -1,8 +1,9 @@
 "use client";
 
+import { MeshReflectorMaterial } from "@react-three/drei";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import { SCENE } from "@/lib/brand";
+import { BRAND, SCENE } from "@/lib/brand";
 import {
   ARROWS_Z,
   DECK_END_Z,
@@ -43,9 +44,10 @@ export function BowlingLane() {
   const laneMaterials = useMemo(() => {
     const top = new THREE.MeshPhysicalMaterial({
       map: wood,
-      roughness: 0.42,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.1,
+      // A freshly oiled, polished lane: strong clear-coat reflections.
+      roughness: 0.3,
+      clearcoat: 1,
+      clearcoatRoughness: 0.04,
     });
     const edge = new THREE.MeshStandardMaterial({ color: "#7a4f27", roughness: 0.6 });
     // Box faces: +x, -x, +y (top), -y, +z, -z
@@ -76,6 +78,22 @@ export function BowlingLane() {
         receiveShadow
       >
         <boxGeometry args={[LANE_WIDTH, LANE_THICKNESS, LANE_LENGTH]} />
+      </mesh>
+
+      {/* Mirror-polished surface: the ball and pins reflect in the lane. */}
+      <mesh position={[0, 0.0006, LANE_CENTER_Z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[LANE_WIDTH, LANE_LENGTH]} />
+        <MeshReflectorMaterial
+          map={wood}
+          mirror={0.55}
+          blur={[260, 90]}
+          resolution={768}
+          mixBlur={1}
+          mixStrength={1.1}
+          roughness={0.32}
+          metalness={0}
+          depthScale={0}
+        />
       </mesh>
 
       {/* Foul line */}
@@ -112,6 +130,14 @@ export function BowlingLane() {
         </mesh>
       ))}
 
+      {/* Neon rails along both sides of the lane (arena lighting) */}
+      {[-1, 1].map((side) => (
+        <mesh key={`n${side}`} position={[side * (LANE_HALF_WIDTH + GUTTER_WIDTH + 0.02), 0.02, LANE_CENTER_Z]}>
+          <boxGeometry args={[0.035, 0.035, LANE_LENGTH]} />
+          <meshStandardMaterial color={BRAND.gold} emissive={BRAND.gold} emissiveIntensity={1.3} toneMapped={false} />
+        </mesh>
+      ))}
+
       {/* Kickback walls either side of the pin deck */}
       {[-1, 1].map((side) => (
         <mesh key={`k${side}`} position={[side * (LANE_HALF_WIDTH + GUTTER_WIDTH + 0.02), 0.28, KICKBACK_CENTER_Z]}>
@@ -120,13 +146,50 @@ export function BowlingLane() {
         </mesh>
       ))}
 
+      {/* The arena: neighbouring lanes either side, each with its own neon rails */}
+      {[-2, -1, 1, 2].map((n) => {
+        const x = n * (LANE_WIDTH + GUTTER_WIDTH * 2 + 0.55);
+        return (
+          <group key={`lane${n}`} position={[x, 0, 0]}>
+            <mesh position={[0, -0.001, LANE_CENTER_Z - 0.6]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[LANE_WIDTH, LANE_LENGTH + 1.2]} />
+              <meshStandardMaterial map={wood} color="#8d7aa0" roughness={0.35} metalness={0.1} />
+            </mesh>
+            <mesh position={[0, -0.03, LANE_CENTER_Z - 0.6]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[LANE_WIDTH + GUTTER_WIDTH * 2 + 0.55, LANE_LENGTH + 1.2]} />
+              <meshStandardMaterial color={SCENE.gutter} roughness={0.9} />
+            </mesh>
+            {[-1, 1].map((side) => (
+              <mesh key={side} position={[side * (LANE_HALF_WIDTH + GUTTER_WIDTH), 0.015, LANE_CENTER_Z - 0.6]}>
+                <boxGeometry args={[0.03, 0.03, LANE_LENGTH + 1.2]} />
+                <meshStandardMaterial color={BRAND.gold} emissive={BRAND.gold} emissiveIntensity={0.7} toneMapped={false} />
+              </mesh>
+            ))}
+          </group>
+        );
+      })}
+
+      {/* The masking unit over the pin decks: a dark fascia with a gold light strip and a red trim */}
+      <mesh position={[0, 1.42, DECK_END_Z + 0.1]}>
+        <boxGeometry args={[16, 0.62, 0.12]} />
+        <meshStandardMaterial color="#0c1236" roughness={0.6} metalness={0.3} />
+      </mesh>
+      <mesh position={[0, 1.1, DECK_END_Z + 0.17]}>
+        <boxGeometry args={[16, 0.035, 0.02]} />
+        <meshStandardMaterial color={BRAND.gold} emissive={BRAND.gold} emissiveIntensity={1.4} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, 1.74, DECK_END_Z + 0.17]}>
+        <boxGeometry args={[16, 0.02, 0.02]} />
+        <meshStandardMaterial color={BRAND.red} emissive={BRAND.red} emissiveIntensity={1.6} toneMapped={false} />
+      </mesh>
+
       {/* Pit and back curtain */}
       <mesh position={[0, -0.35, (DECK_END_Z + PIT_BACK_Z) / 2]}>
         <boxGeometry args={[LANE_WIDTH + GUTTER_WIDTH * 2, 0.1, PIT_BACK_Z - DECK_END_Z]} />
         <meshStandardMaterial color="#0b1030" roughness={1} />
       </mesh>
-      <mesh position={[0, 0.2, PIT_BACK_Z]}>
-        <planeGeometry args={[3.2, 1.2]} />
+      <mesh position={[0, 0.5, PIT_BACK_Z]}>
+        <planeGeometry args={[16, 2]} />
         <meshStandardMaterial color="#0d143a" roughness={1} />
       </mesh>
     </group>

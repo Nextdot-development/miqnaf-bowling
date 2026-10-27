@@ -46,6 +46,8 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
   const gesture = useRef<{ id: number; x: number; y: number; samples: { y: number; t: number }[] } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [armed, setArmed] = useState(false);
+  /** Where the swipe is heading, -1 (left) to 1 (right), while dragging. */
+  const [steer, setSteer] = useState(0);
   const snapBack = useRef(0);
 
   const ball = useMemo(() => {
@@ -105,6 +107,7 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
     if (g.samples.length > 8) g.samples.shift();
     const p = progressFor(e.clientY);
     aimRef.current = p;
+    setSteer(Math.max(-1, Math.min(1, Math.atan2(e.clientX - g.x, Math.max(1, g.y - e.clientY)) / 0.5)));
     const nowArmed = g.y - e.clientY >= height * MIN_SWIPE;
     if (nowArmed !== armed) setArmed(nowArmed);
   };
@@ -155,6 +158,7 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
             if (e.detail === 0 && enabled) onRoll();
           }}
           aria-label="Roll the ball. On the touch screen, swipe the ball up the lane."
+          data-sound="none"
           className="absolute rounded-full outline-offset-4 focus-visible:outline focus-visible:outline-4 focus-visible:outline-brand-gold"
           style={{
             left: ball.x - ball.r * 1.15,
@@ -163,6 +167,22 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
             height: ball.r * 2.3,
           }}
         />
+      )}
+
+      {/* Aim guide while dragging: a dotted path up the lane, bending the way the
+          finger goes, brighter once the swipe is long enough to throw. */}
+      {dragging && ball && (
+        <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+          <path
+            d={`M ${ball.x} ${ball.y - ball.r * 1.3} Q ${ball.x + steer * width * 0.12} ${ball.y - height * 0.32} ${ball.x + steer * width * 0.03} ${ball.y - height * 0.5}`}
+            fill="none"
+            stroke={armed ? "rgb(var(--brand-gold-rgb))" : "white"}
+            strokeOpacity={armed ? 0.95 : 0.6}
+            strokeWidth={Math.max(4, ball.r * 0.22)}
+            strokeLinecap="round"
+            strokeDasharray={`0.1 ${Math.max(14, ball.r * 0.7)}`}
+          />
+        </svg>
       )}
 
       <AnimatePresence>
@@ -192,6 +212,7 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
 
       {(showHint || showPick || dragging) && (
         <div
+          data-lane-card
           className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/80 px-5 py-2 text-center shadow-lift backdrop-blur-sm kiosk:w-auto kiosk:max-w-[min(60rem,calc(100%-2*(min(24rem,25%)+2.75rem)))] kiosk:rounded-2xl kiosk:px-8 kiosk:py-4 ${
             // Before a ball is picked there is no instruction, so off the kiosk
             // (where the card holds only the instruction) there is nothing to show.

@@ -82,8 +82,9 @@ export function LaneFallback2D({
             ? performance.now() - rollStartedAt
             : 0;
 
-      const b = ballPose(elapsed, lineSeed === null ? STRAIGHT_LINE : ballLineFor(lineSeed, lineDrug, lineAim));
-      const pathX = lineDrug ? rackLineX(lineDrug) : 0;
+      const line = lineSeed === null ? STRAIGHT_LINE : ballLineFor(lineSeed, lineDrug, lineAim);
+      const b = ballPose(elapsed, line);
+      const pathX = lineDrug ? (lineSeed === null ? rackLineX(lineDrug) : line.pocket) : 0;
       const bc = project(b.x, b.y, b.z);
       const br = Math.abs(project(b.x, b.y + BALL_RADIUS, b.z).y - bc.y);
       if (ballRef.current) {

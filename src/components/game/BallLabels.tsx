@@ -1,7 +1,10 @@
 "use client";
 
+import { Fragment } from "react";
 import { CONVENTIONAL_BALLS, DRUGS } from "@/data/gameData";
-import { BALL_RADIUS, BALL_START_Z, introBallX } from "@/lib/laneLayout";
+import { BALL_RADIUS, BALL_START_Z, introBallX, rackBallPosition } from "@/lib/laneLayout";
+import type { DrugId } from "@/types/game";
+import { BALL_COLORS } from "@/lib/drugVisuals";
 import { createProjector } from "@/lib/projection";
 
 /** Name tags under the balls lined up on the intro lane. */
@@ -28,5 +31,68 @@ export function BallLabels({ width, height }: { width: number; height: number })
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * The balls on the ball return while the doctor chooses a therapy: each one
+ * glows with a pulsing gold ring and carries its name tag, and a tap on the
+ * ball or its tag picks it. (A hidden list beside the lane is the accessible way to choose.)
+ */
+export function RackLabels({ balls, width, height, onSelect }: { balls: readonly DrugId[]; width: number; height: number; onSelect: (drug: DrugId) => void }) {
+  if (!width || !height) return null;
+  const project = createProjector(width, height);
+  const spots = balls.map((id, i) => {
+    const p = rackBallPosition(i);
+    const ball = project(p.x, BALL_RADIUS + 0.06, p.z);
+    const r = project(p.x + BALL_RADIUS, BALL_RADIUS + 0.06, p.z).x - ball.x;
+    return { id, ball, r };
+  });
+  // On a narrow lane there is no room for the list; there the ball cards below the lane name the balls.
+  const list = width >= 560 && spots.length > 0;
+  // The list sits just right of the rack, level with the balls.
+  const right = Math.max(...spots.map((s) => s.ball.x + s.r * 1.5));
+  const middle = spots.reduce((sum, s) => sum + s.ball.y, 0) / Math.max(1, spots.length);
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10" data-sound="select" aria-hidden>
+      {spots.map(({ id, ball, r }) => {
+        // A round tap target over the ball itself (above the swipe area, which covers the lane's foot).
+        const hit = Math.max(44, r * 2.6);
+        return (
+          <Fragment key={id}>
+            <span className="rack-ball-glow absolute rounded-full" style={{ left: ball.x - r * 1.15, top: ball.y - r * 1.15, width: r * 2.3, height: r * 2.3 }} />
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => onSelect(id)}
+              className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full"
+              style={{ left: ball.x, top: ball.y, width: hit, height: hit }}
+            />
+          </Fragment>
+        );
+      })}
+      {list && (
+        <div
+          className="solid-panel pointer-events-auto absolute -translate-y-1/2 rounded-2xl p-2.5 shadow-lift ring-2 ring-brand-gold kiosk:p-[0.75rem]"
+          style={{ left: right, top: middle }}
+        >
+          <p className="eyebrow px-1.5 pb-1.5 text-brand-gold kiosk:pb-[0.5rem] kiosk:text-[0.95rem]">Choose your ball</p>
+          <div className="flex flex-col gap-1.5 kiosk:gap-[0.5rem]">
+            {spots.map(({ id }) => (
+              <button
+                key={id}
+                type="button"
+                tabIndex={-1}
+                onClick={() => onSelect(id)}
+                className="flex items-center gap-2.5 whitespace-nowrap rounded-xl bg-white/10 px-3 py-2 text-left font-display text-sm font-bold text-white transition-colors hover:bg-white/20 active:scale-[0.98] kiosk:gap-[0.7rem] kiosk:px-[0.9rem] kiosk:py-[0.6rem] kiosk:text-[1.1rem]"
+              >
+                <span className="h-4 w-4 shrink-0 rounded-full ring-2 ring-white/70 kiosk:h-[1.1rem] kiosk:w-[1.1rem]" style={{ background: BALL_COLORS[id] }} />
+                {DRUGS[id].name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

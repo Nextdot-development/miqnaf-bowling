@@ -4,12 +4,14 @@ import { RACK_RESET_MS, ROLL_TOTAL_MS } from "@/lib/timing";
 import { useGameState } from "./useGameState";
 
 const playRoll = vi.fn(async () => {});
+const playUi = vi.fn();
 vi.mock("@/hooks/useGameAudio", () => ({
-  useGameAudio: () => ({ playRoll, unlock: () => {}, stopAll: () => {} }),
+  useGameAudio: () => ({ playRoll, playUi, unlock: () => {}, stopAll: () => {} }),
 }));
 
 beforeEach(() => {
   playRoll.mockClear();
+  playUi.mockClear();
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 });
 afterEach(() => {
@@ -34,6 +36,7 @@ describe("useGameState", () => {
       expect(result.current.state.phase).toBe("transition");
       wait(RACK_RESET_MS);
       expect(result.current.state.rackResetAt).not.toBeNull();
+      expect(playUi).toHaveBeenLastCalledWith("rack"); // the pinsetter sounds as the rack resets
       act(() => result.current.startFrame2());
       act(() => result.current.roll());
       wait(ROLL_TOTAL_MS); // MIQNAF®

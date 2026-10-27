@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { scheduleEndSound, scheduleQuestionSound, type EndOutcome } from "@/lib/endSound";
 import { buildSoundCues, SOUND_FILES, SOUND_ONSETS, type SoundName } from "@/lib/rollSound";
+import { GAME_SOUND_EVENT, scheduleUiSound, soundForTarget, type UiSound } from "@/lib/uiSound";
 
 export function useGameAudio(enabled: boolean) {
   const ctxRef = useRef<AudioContext | null>(null);
@@ -164,5 +165,36 @@ export function useGameAudio(enabled: boolean) {
     });
   }, [enabled, ensureContext]);
 
-  return { unlock, playRoll, playEnding, playQuestion, stopAll };
+  /** A short interface sound (button tap, key, ball pick, pop-up, pinsetter). */
+  const playUi = useCallback(
+    (name: UiSound) => {
+      if (!enabled) return;
+      const ctx = ensureContext();
+      const master = masterRef.current;
+      if (!ctx || !master) return;
+      scheduleUiSound(ctx, master, name, ctx.currentTime + 0.01, (node) => {
+        activeRef.current.add(node);
+        node.onended = () => activeRef.current.delete(node);
+      });
+    },
+    [enabled, ensureContext],
+  );
+
+  // Every button tap gets its sound; other components ask for theirs with emitGameSound.
+  useEffect(() => {
+    if (!enabled) return;
+    const onTap = (e: MouseEvent) => {
+      const name = soundForTarget(e.target);
+      if (name) playUi(name);
+    };
+    const onRequest = (e: Event) => playUi((e as CustomEvent<UiSound>).detail);
+    window.addEventListener("click", onTap, true);
+    window.addEventListener(GAME_SOUND_EVENT, onRequest);
+    return () => {
+      window.removeEventListener("click", onTap, true);
+      window.removeEventListener(GAME_SOUND_EVENT, onRequest);
+    };
+  }, [enabled, playUi]);
+
+  return { unlock, playRoll, playEnding, playQuestion, playUi, stopAll };
 }

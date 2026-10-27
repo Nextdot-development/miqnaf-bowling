@@ -1,13 +1,26 @@
 import type { PinNumber } from "@/types/game";
 
-export const LANE_HALF_WIDTH = 0.92;
+/** Half the lane's width: a wide main lane, so it fills most of the screen between the side panels. */
+export const LANE_HALF_WIDTH = 1.2;
 export const GUTTER_WIDTH = 0.22;
 export const LANE_NEAR_Z = 1.2;
 export const FOUL_LINE_Z = 0.42;
-export const ARROWS_Z = -1.25;
+export const ARROWS_Z = -1.7;
 
 export const BALL_RADIUS = 0.11;
 export const BALL_START_Z = -0.05;
+
+/**
+ * The ball return beside the approach (left of the lane): its centre-line and
+ * the length of its rails. Balls rest on it one behind the other.
+ */
+export const RACK_X = -(LANE_HALF_WIDTH + GUTTER_WIDTH + 0.48);
+export const RACK_LENGTH = 1.15;
+/** Middle of the rails along the lane: the hood end is the far end. */
+export const RACK_Z = -0.68;
+export function rackBallPosition(index: number): { x: number; z: number } {
+  return { x: RACK_X, z: -0.78 + index * 0.44 };
+}
 
 /** Intro screen: Player 1's balls sit side by side at the start position, centred. */
 export const INTRO_BALL_SPACING = 0.7;
@@ -39,15 +52,15 @@ export const PIN_PROFILE: readonly (readonly [number, number])[] = [
 ];
 
 /** The head pin (pin 1), the point of the triangle nearest the bowler. */
-export const FRONT_ROW_Z = -3.0;
+export const FRONT_ROW_Z = -4.2;
 /**
  * Depth between rows. Deeper than an equilateral rack (0.40), so that from the
  * bowler's end each row stands clearly behind the one in front, as the rack
  * looks from a raised view of a real lane.
  */
 export const ROW_GAP = 0.6;
-export const DECK_END_Z = -5.15;
-export const PIT_BACK_Z = -5.75;
+export const DECK_END_Z = -6.35;
+export const PIT_BACK_Z = -6.95;
 
 export const CAMERA = {
   position: [0, 1.8, 2.9] as const,

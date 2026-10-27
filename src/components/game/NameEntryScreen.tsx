@@ -50,19 +50,18 @@ export function NameEntryScreen({ onSubmit }: NameEntryScreenProps) {
       <form
         noValidate
         onSubmit={submit}
-        className="w-full max-w-3xl overflow-hidden rounded-[2rem] bg-surface text-center shadow-lift kiosk:flex kiosk:max-w-none kiosk:flex-col"
+        className="game-panel w-full max-w-3xl text-center kiosk:flex kiosk:max-w-none kiosk:flex-col"
       >
-        <div className="tricolour-rule h-2" aria-hidden />
+        {/* Title band, as on the game's pop-ups. */}
+        <div className="game-panel-head kiosk:!py-[clamp(0.8rem,2vh,1.3rem)]">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/70 kiosk:text-base">Welcome, Doctor</p>
+          <h2 id="name-heading" className="game-stamp game-panel-title mt-1 kiosk:!text-[clamp(2.4rem,5vh,3.4rem)]">
+            Let&apos;s Get Started
+          </h2>
+        </div>
         {/* On the kiosk the card fills the screen and the keyboard takes the spare height. */}
         <div className="px-4 py-6 sm:px-10 sm:py-8 kiosk:mx-auto kiosk:flex kiosk:min-h-0 kiosk:w-full kiosk:max-w-[90rem] kiosk:flex-1 kiosk:flex-col kiosk:px-[3rem] kiosk:py-[clamp(1.25rem,3vh,2.25rem)]">
-        <p className="eyebrow font-body kiosk:text-base">Welcome, Doctor</p>
-        <h2
-          id="name-heading"
-          className="mt-1 font-display text-[2rem] font-black uppercase leading-tight tracking-tight text-brand-navy sm:text-5xl kiosk:text-[clamp(2.4rem,5vh,3.4rem)]"
-        >
-          Let&apos;s Get Started
-        </h2>
-        <p className="mt-2 text-base text-ink-muted sm:text-lg kiosk:mt-[0.75rem] kiosk:text-[1.25rem]">
+        <p className="text-base text-white/75 sm:text-lg kiosk:text-[1.25rem]">
           Your name is used only for the greeting in this game.
         </p>
 
@@ -71,8 +70,8 @@ export function NameEntryScreen({ onSubmit }: NameEntryScreenProps) {
         </label>
         {/* The name field, with the "Dr." it will be greeted with. */}
         <div
-          className={`mt-5 flex items-center gap-3 rounded-2xl border-2 bg-surface-page px-4 transition-colors focus-within:border-brand-navy focus-within:shadow-[0_0_0_4px_rgb(var(--brand-gold-rgb)/0.35)] kiosk:mt-[clamp(1rem,2.6vh,1.75rem)] kiosk:px-[1.25rem] ${
-            error ? "border-brand-red" : "border-line"
+          className={`mt-5 flex items-center gap-3 rounded-2xl border-2 bg-white px-4 transition-colors focus-within:border-brand-gold focus-within:shadow-[0_0_0_4px_rgb(var(--brand-gold-rgb)/0.35)] kiosk:mt-[clamp(1rem,2.6vh,1.75rem)] kiosk:px-[1.25rem] ${
+            error ? "border-brand-red" : "border-white/30"
           }`}
         >
           <span className="shrink-0 rounded-xl bg-brand-navy px-3 py-1.5 font-display text-lg font-black text-white kiosk:text-[1.4rem]" aria-hidden>
@@ -101,12 +100,12 @@ export function NameEntryScreen({ onSubmit }: NameEntryScreenProps) {
         />
         </div>
         {error && (
-          <p id={errorId} role="alert" className="mt-2 text-base font-semibold text-brand-red kiosk:text-[1.1rem]">
+          <p id={errorId} role="alert" className="mt-2 text-base font-semibold text-brand-gold kiosk:text-[1.1rem]">
             Please enter your name to continue.
           </p>
         )}
 
-        <div className="mt-5 rounded-3xl bg-brand-navy p-3 shadow-inner sm:p-4 kiosk:mt-[clamp(1rem,2.4vh,1.5rem)] kiosk:min-h-0 kiosk:flex-1 kiosk:p-[1.25rem]">
+        <div className="mt-5 rounded-3xl bg-black/30 p-3 ring-1 ring-white/10 sm:p-4 kiosk:mt-[clamp(1rem,2.4vh,1.5rem)] kiosk:min-h-0 kiosk:flex-1 kiosk:p-[1.25rem]">
           <OnScreenKeyboard value={value} onChange={change} maxLength={MAX_NAME_LENGTH} shift={shift} onShiftChange={setShift} />
         </div>
 

@@ -15,9 +15,12 @@ interface DialogProps {
   children?: ReactNode;
   footer?: ReactNode;
   size?: "md" | "lg";
+  /** "game": the dark arcade panel of the game's pop-ups. */
+  tone?: "light" | "game";
 }
 
-export function Dialog({ open, onClose, title, eyebrow, children, footer, size = "md" }: DialogProps) {
+export function Dialog({ open, onClose, title, eyebrow, children, footer, size = "md", tone = "light" }: DialogProps) {
+  const game = tone === "game";
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
@@ -76,7 +79,7 @@ export function Dialog({ open, onClose, title, eyebrow, children, footer, size =
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            className={`relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl bg-surface shadow-lift sm:rounded-3xl ${
+            className={`relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl shadow-lift sm:rounded-3xl ${game ? "game-panel" : "bg-surface"} ${
               size === "lg" ? "sm:max-w-3xl" : "sm:max-w-xl"
             }`}
             initial={reduce ? false : { y: 24, opacity: 0 }}
@@ -91,20 +94,20 @@ export function Dialog({ open, onClose, title, eyebrow, children, footer, size =
             >
               <div className="min-w-0">
                 {eyebrow && <div className="eyebrow mb-1">{eyebrow}</div>}
-                <h2 id={titleId} className="text-2xl font-black leading-tight text-brand-navy sm:text-3xl">
+                <h2 id={titleId} className={`text-2xl font-black leading-tight sm:text-3xl ${game ? "text-white" : "text-brand-navy"}`}>
                   {title}
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="-mr-2 rounded-full p-2 text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink"
+                className={`-mr-2 rounded-full p-2 transition-colors ${game ? "bg-white/10 text-white hover:bg-white/20" : "text-ink-muted hover:bg-surface-sunken hover:text-ink"}`}
                 aria-label="Close"
               >
                 <X className="h-6 w-6" aria-hidden />
               </button>
             </div>
-            {children && <div className="overflow-y-auto px-6 py-5 sm:px-8">{children}</div>}
+            {children && <div className="no-scrollbar overflow-y-auto px-6 py-5 sm:px-8">{children}</div>}
             {footer && <div className={`px-6 py-4 sm:px-8 ${children ? "border-t border-line" : ""}`}>{footer}</div>}
           </motion.div>
         </motion.div>

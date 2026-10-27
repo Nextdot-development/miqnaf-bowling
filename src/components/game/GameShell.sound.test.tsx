@@ -7,7 +7,7 @@ import { GameShell } from "./GameShell";
 const playEnding = vi.fn();
 const playQuestion = vi.fn();
 vi.mock("@/hooks/useGameAudio", () => ({
-  useGameAudio: () => ({ playRoll: async () => {}, playEnding, playQuestion, unlock: () => {}, stopAll: () => {} }),
+  useGameAudio: () => ({ playRoll: async () => {}, playEnding, playQuestion, playUi: () => {}, unlock: () => {}, stopAll: () => {} }),
 }));
 
 beforeEach(() => {

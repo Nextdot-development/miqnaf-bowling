@@ -25,6 +25,7 @@ export const SCENE = {
   gutter: "#121A45",
   pinWhite: "#F7F5F0",
   pinStripe: BRAND.red,
+  pinNumber: BRAND.navy,
 } as const;
 
 function hexToRgbTriplet(hex: string): string {

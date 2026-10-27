@@ -21,9 +21,13 @@ interface BowlingBallProps {
   offsetX?: number;
   /** A waiting ball: stays at the start position and never rolls. */
   still?: boolean;
+  /** A ball resting somewhere fixed (on the ball return). */
+  restAt?: readonly [number, number, number];
+  /** Tapping the ball picks it (choosing a therapy on the ball return). */
+  onSelect?: () => void;
 }
 
-export function BowlingBall({ color, offsetX = 0, still = false }: BowlingBallProps) {
+export function BowlingBall({ color, offsetX = 0, still = false, restAt, onSelect }: BowlingBallProps) {
   const group = useRef<THREE.Group>(null);
   const spinner = useRef<THREE.Group>(null);
   const timeline = useSceneTimeline();
@@ -64,6 +68,13 @@ export function BowlingBall({ color, offsetX = 0, still = false }: BowlingBallPr
   );
 
   useFrame(() => {
+    if (restAt) {
+      if (group.current) {
+        group.current.visible = true;
+        group.current.position.set(...restAt);
+      }
+      return;
+    }
     const t = timeline.current;
     const elapsed = still ? 0 : elapsedMs(t, performance.now());
     // Each throw takes its own curved line (fixed by its start time).
@@ -82,7 +93,20 @@ export function BowlingBall({ color, offsetX = 0, still = false }: BowlingBallPr
   return (
     <group ref={group}>
       <group ref={spinner}>
-        <mesh material={material} castShadow>
+        <mesh
+          material={material}
+          castShadow
+          onClick={
+            onSelect
+              ? (e) => {
+                  e.stopPropagation();
+                  onSelect();
+                }
+              : undefined
+          }
+          onPointerOver={onSelect ? () => (document.body.style.cursor = "pointer") : undefined}
+          onPointerOut={onSelect ? () => (document.body.style.cursor = "") : undefined}
+        >
           <sphereGeometry args={[BALL_RADIUS, 64, 48]} />
         </mesh>
         {holes.map((h, i) => (

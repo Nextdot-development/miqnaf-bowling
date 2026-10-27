@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SCENE } from "@/lib/brand";
 import { pinPosition } from "@/lib/laneLayout";
-import { lanePinPose, rackLineX } from "@/lib/rollAnimation";
+import { ballLineFor, lanePinPose, rackLineX } from "@/lib/rollAnimation";
 import type { LanePin, Pin } from "@/types/game";
 import { elapsedMs, useSceneTimeline } from "./sceneClock";
 
@@ -58,7 +58,7 @@ export function PathogenPin({
     const g = body.current;
     if (!g) return;
     const t = timeline.current;
-    const pathX = t.lineDrug ? rackLineX(t.lineDrug) : 0;
+    const pathX = t.lineDrug ? (t.lineSeed === null ? rackLineX(t.lineDrug) : ballLineFor(t.lineSeed, t.lineDrug, t.lineAim).pocket) : 0;
     const now = performance.now();
     const pose = lanePinPose(pin.number, statusRef.current, t.phase, elapsedMs(t, now), {
       pathX,

@@ -203,7 +203,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...initialGameState, rollId: state.rollId, soundOn: state.soundOn };
 
     case "OPEN_PIN":
-      if (state.phase === "intro" || state.phase === "name" || state.phase === "therapy" || state.phase === "rolling" || state.phase === "closing") return state;
+      // Any pin on the lane can be opened, including while the doctor chooses a therapy.
+      if (state.phase === "intro" || state.phase === "name" || state.phase === "rolling" || state.phase === "closing") return state;
       return { ...state, openPin: action.pin };
 
     case "CLOSE_PIN":

@@ -46,7 +46,7 @@ export function GameHeader({
           <button
             type="button"
             onClick={onNewSession}
-            className="inline-flex items-center gap-2 rounded-full bg-brand-gold px-4 py-2 font-bold text-brand-navy shadow-[inset_0_-3px_0_rgb(0_0_0/0.16)] transition-transform active:translate-y-px"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full bg-brand-gold px-4 py-2 font-bold text-brand-navy shadow-[inset_0_-3px_0_rgb(0_0_0/0.16)] transition-transform active:translate-y-px"
             aria-label="New game"
           >
             <RotateCcw className="h-5 w-5" strokeWidth={2.5} aria-hidden />

@@ -22,7 +22,7 @@ export function BallRack({ phase, frame, selectedDrug, onSelect, className = "" 
   const balls = choosing ? CONVENTIONAL_BALLS : [selectedDrug!];
 
   return (
-    <section aria-labelledby="ball-rack-heading" className={className}>
+    <section aria-labelledby="ball-rack-heading" data-sound="select" className={`${className} ${choosing ? "sm:sr-only" : ""}`}>
       <h2 id="ball-rack-heading" className="eyebrow mb-3 text-white/80 kiosk:text-base">
         {choosing ? "Choose your therapy" : round2 ? "Novel therapy" : "Your therapy"}
       </h2>

@@ -4,11 +4,12 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { DRUGS } from "@/data/gameData";
+import { BALL_TRAVEL_MS } from "@/lib/timing";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useWebGLSupport } from "@/hooks/useWebGLSupport";
 import type { DrugId, GamePhase, LanePins, Pin, RollResult } from "@/types/game";
 import type { LanePrompt } from "./SwipeToRoll";
-import { BallLabels } from "./BallLabels";
+import { BallLabels, RackLabels } from "./BallLabels";
 import type { BowlingSceneProps } from "./BowlingScene";
 import { LaneFallback2D } from "./LaneFallback2D";
 import { PinLabelsOverlay } from "./PinLabelsOverlay";
@@ -60,6 +61,10 @@ interface GameStageProps {
   lane: LanePins;
   /** Start the roll (swipe gesture or keyboard). Omit to disable rolling. */
   onRoll?: (aim?: number) => void;
+  /** Balls waiting on the ball return beside the lane. */
+  rackBalls?: readonly DrugId[];
+  /** Choosing a therapy: tapping a ball on the return picks it. */
+  onRackSelect?: (drug: DrugId) => void;
   /** Classes for the lane itself (size / aspect). */
   className?: string;
   /** Classes for the wrapper around the lane and its pin key. */
@@ -88,6 +93,8 @@ export function GameStage({
   onPinSelect,
   lane,
   onRoll,
+  rackBalls = [],
+  onRackSelect,
   className = "",
   wrapperClassName = "",
   variant = "card",
@@ -108,6 +115,16 @@ export function GameStage({
   useEffect(() => {
     if (phase !== "rolling") aimRef.current = 0;
   }, [phase, selectedDrug]);
+  // After the hit: a big "N PINS" banner across the lane, until the result pop-up.
+  const pinsDown = Object.values(lane).filter((s) => s === "down").length;
+  const [banner, setBanner] = useState<number | null>(null);
+  useEffect(() => {
+    setBanner(null);
+    if (phase !== "rolling" || rollStartedAt === null || pinsDown === 0 || pinsDown === Object.keys(lane).length) return;
+    const wait = BALL_TRAVEL_MS + 900 - (performance.now() - rollStartedAt);
+    const t = window.setTimeout(() => setBanner(pinsDown), Math.max(0, wait));
+    return () => window.clearTimeout(t);
+  }, [phase, rollStartedAt, pinsDown, lane]);
   const handleFail = useCallback(() => setSceneFailed(true), []);
   const handleReady = useCallback(() => setSceneReady(true), []);
 
@@ -128,6 +145,8 @@ export function GameStage({
     onReady: handleReady,
     aimRef,
     aiming,
+    rackBalls,
+    onRackSelect,
   };
 
   return (
@@ -152,6 +171,7 @@ export function GameStage({
         <PinLabelsOverlay
           phase={phase}
           compact={compact}
+          painted={use3D}
           lane={lane}
           interactive={interactive}
           pinName={pinName}
@@ -160,6 +180,9 @@ export function GameStage({
       )}
 
       {phase === "intro" && <BallLabels width={stageSize.width} height={stageSize.height} />}
+      {onRackSelect && rackBalls.length > 0 && use3D && (
+        <RackLabels balls={rackBalls} width={stageSize.width} height={stageSize.height} onSelect={onRackSelect} />
+      )}
 
       {onRoll && (
         <SwipeToRoll
@@ -201,6 +224,31 @@ export function GameStage({
                 {result.pinsDown} of {result.totalPins}
               </span>
             </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {banner !== null && phase === "rolling" && (
+          <motion.div
+            key="pins-banner"
+            className="pointer-events-none absolute inset-x-0 top-[38%] z-20 flex justify-center"
+            initial={reduce ? false : { opacity: 0, scaleY: 0.2 }}
+            animate={{ opacity: 1, scaleY: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduce ? 0 : 0.25 }}
+            aria-hidden
+          >
+            <div className="w-full bg-gradient-to-r from-transparent via-brand-navy/85 to-transparent py-3 text-center shadow-[0_0_40px_rgb(var(--brand-gold-rgb)/0.35)] sm:py-5">
+              <motion.p
+                className="font-display text-5xl font-black uppercase italic tracking-tight text-white drop-shadow-[0_4px_0_rgb(0_0_0/0.35)] sm:text-7xl kiosk:text-[clamp(4rem,10vh,7.5rem)]"
+                initial={reduce ? false : { scale: 2, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 16 }}
+              >
+                <span className="text-brand-gold">{banner}</span> {banner === 1 ? "Pin" : "Pins"}
+              </motion.p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

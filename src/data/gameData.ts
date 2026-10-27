@@ -5,9 +5,6 @@ export const GAME_TITLE = "CABP Challenge";
 export const GAME_SUBTITLE = "Conventional Therapy vs Novel Therapy";
 export const GAME_TAGLINE = "Knock down the barriers";
 
-export const FOOTER_NOTE =
-  "For scientific discussion among healthcare professionals. Pin outcomes are a teaching model built from published in vitro and clinical data. They do not replace the prescribing information, local antibiograms or clinical judgement.";
-
 export const DISCLAIMER =
   "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company.";
 

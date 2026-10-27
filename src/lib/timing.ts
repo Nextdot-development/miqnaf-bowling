@@ -1,4 +1,5 @@
-export const BALL_TRAVEL_MS = 2000;
+/** Release to the head pin: a long lane and an unhurried roll. */
+export const BALL_TRAVEL_MS = 2700;
 
 /** Time after impact for pins to tip, slide and settle. */
 export const PIN_SETTLE_MS = 3400;

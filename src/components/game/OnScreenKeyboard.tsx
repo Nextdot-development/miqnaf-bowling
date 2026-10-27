@@ -51,7 +51,7 @@ export function OnScreenKeyboard({ value, onChange, maxLength, shift, onShiftCha
   };
 
   return (
-    <div role="group" aria-label="On-screen keyboard" className="mx-auto w-full space-y-2 kiosk:flex kiosk:h-full kiosk:flex-col kiosk:gap-[0.75rem] kiosk:space-y-0">
+    <div role="group" aria-label="On-screen keyboard" data-sound="key" className="mx-auto w-full space-y-2 kiosk:flex kiosk:h-full kiosk:flex-col kiosk:gap-[0.75rem] kiosk:space-y-0">
       {ROWS.map((row, i) => (
         <div key={i} className={`flex gap-1.5 sm:gap-2 kiosk:min-h-[3.4rem] kiosk:flex-1 kiosk:gap-[0.75rem] ${i === 1 ? "px-[4%]" : ""}`}>
           {i === 2 && (

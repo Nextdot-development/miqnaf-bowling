@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitForElementToBeRemoved, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DISCLAIMER, FOOTER_NOTE } from "@/data/gameData";
+import { DISCLAIMER } from "@/data/gameData";
 import { RACK_RESET_MS, ROLL_TOTAL_MS, STRIKE_RESULT_MS } from "@/lib/timing";
 import { mediaState } from "@/test/setup";
 import { GameShell } from "./GameShell";
@@ -64,8 +64,9 @@ function frame2() {
 
 const laneTags = () => screen.queryAllByRole("button", { name: /^Pin \d+, / }).map((b) => b.getAttribute("aria-label")?.match(/^Pin (\d+)/)?.[1]);
 
+/** The footer: the disclaimer only (client request). */
 const disclaimer = () => {
-  expect(screen.getByText(FOOTER_NOTE)).toBeVisible();
+  expect(screen.queryByText(/^For scientific discussion among healthcare professionals/)).not.toBeInTheDocument();
   return screen.getByText(DISCLAIMER);
 };
 
@@ -111,7 +112,7 @@ describe("GameShell", () => {
     expect(screen.getByRole("heading", { name: 'Hi Dr. <img src=x onerror="alert(1)"> Rao,' })).toBeInTheDocument();
     expect(document.querySelector("img[src='x']")).toBeNull();
     expect(screen.getByText(/Every CABP patient presents multiple treatment challenges/)).toBeInTheDocument();
-    expect(screen.getAllByText("Choose Your Therapy").length).toBeGreaterThan(0); // on the lane, behind the pop-up
+    expect(screen.getAllByText("Tap a ball to choose your conventional therapy").length).toBeGreaterThan(0); // on the lane, behind the pop-up
     // The ten barrier pins, by number and full name.
     const barriers = within(screen.getByRole("dialog")).getByRole("list");
     expect(within(barriers).getAllByRole("listitem").map((l) => l.textContent)).toEqual([

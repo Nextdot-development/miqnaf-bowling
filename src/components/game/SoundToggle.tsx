@@ -15,7 +15,7 @@ export function SoundToggle({ on, onChange }: SoundToggleProps) {
       role="switch"
       aria-checked={on}
       onClick={() => onChange(!on)}
-      className="inline-flex items-center gap-3 rounded-full border border-line bg-surface py-1.5 pl-3 pr-1.5 font-semibold text-brand-navy shadow-sm transition-colors hover:border-brand-navy/40"
+      className="inline-flex min-h-[44px] items-center gap-3 rounded-full border border-line bg-surface py-1.5 pl-3 pr-1.5 font-semibold text-brand-navy shadow-sm transition-colors hover:border-brand-navy/40"
     >
       {on ? <Volume2 className="h-5 w-5" aria-hidden /> : <VolumeX className="h-5 w-5 text-ink-soft" aria-hidden />}
       <span className="hidden lg:inline">Sound {on ? "on" : "off"}</span>

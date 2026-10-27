@@ -32,6 +32,11 @@ export function useGameState(reducedMotion: boolean) {
     return () => window.clearTimeout(t);
   }, [phase, rackResetAt, reducedMotion]);
 
+  const { playUi } = audio;
+  useEffect(() => {
+    if (phase === "transition" && rackResetAt !== null && !reducedMotion) playUi("rack");
+  }, [phase, rackResetAt, reducedMotion, playUi]);
+
   const { playRoll } = audio;
   const soundedRoll = useRef(0);
   useEffect(() => {
