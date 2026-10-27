@@ -90,7 +90,7 @@ export function rackLineX(drug: DrugId): number {
 }
 
 
-export function ballLineFor(seed: number, drug: DrugId | null = null): BallLine {
+export function ballLineFor(seed: number, drug: DrugId | null = null, aim: number | null = null): BallLine {
   let a = Math.floor(Math.abs(seed * 1000)) | 0;
   const rand = () => {
     a = (a + 0x6d2b79f5) | 0;
@@ -101,6 +101,13 @@ export function ballLineFor(seed: number, drug: DrugId | null = null): BallLine 
   const coin = rand() < 0.5 ? -1 : 1;
   const bulge = 0.14 + rand() * 0.16; // 0.14 to 0.30 out to one side
   const pocket = 0.03 + rand() * 0.04;
+  if (drug && aim !== null && Number.isFinite(aim)) {
+    // Thrown by a swipe: the ball heads out the way the finger went (further
+    // the more angled the swipe), then hooks back into its line through the rack.
+    const a = Math.max(-1, Math.min(1, aim));
+    const side = Math.abs(a) < 0.06 ? coin : Math.sign(a);
+    return { bulge: side * (0.03 + Math.abs(a) * 0.3 + rand() * 0.03), pocket: rackLineX(drug) };
+  }
   if (drug) {
     const x = rackLineX(drug);
     // Swings out on the side it enters the rack, so it never cuts across the head pin.

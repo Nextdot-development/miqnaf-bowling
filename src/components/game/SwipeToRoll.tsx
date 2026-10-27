@@ -25,7 +25,8 @@ interface SwipeToRollProps {
   height: number;
   aimRef: MutableRefObject<number>;
   onAimingChange: (aiming: boolean) => void;
-  onRoll: () => void;
+  /** `aim`: the swipe's direction, -1 (left) to 1 (right). */
+  onRoll: (aim?: number) => void;
   prompt?: LanePrompt;
 }
 
@@ -112,14 +113,16 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
     const g = gesture.current;
     if (!g || e.pointerId !== g.id) return;
     const dy = g.y - e.clientY; // upward is positive
-    const dx = Math.abs(e.clientX - g.x);
+    const sideways = e.clientX - g.x;
+    const dx = Math.abs(sideways);
     const first = g.samples[0]!;
     const speed = (first.y - e.clientY) / Math.max(1, e.timeStamp - first.t);
     const upward = dy > dx * 0.6;
     const rolled = enabled && upward && (dy >= height * MIN_SWIPE || (speed >= FLICK_SPEED && dy >= 20));
     if (rolled) {
       aimRef.current = Math.max(aimRef.current, 0.15);
-      onRoll();
+      // Straight up is 0; about 30° to either side is full left (-1) or right (1).
+      onRoll(Math.max(-1, Math.min(1, Math.atan2(sideways, Math.max(1, dy)) / 0.5)));
     }
     end(rolled);
   };
@@ -212,7 +215,7 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
                   <button
                     type="button"
                     onPointerDown={(e) => e.stopPropagation()}
-                    onClick={onRoll}
+                    onClick={() => onRoll()}
                     className="btn-primary pointer-events-auto shrink-0 whitespace-nowrap px-[1.5rem] py-[0.6rem] text-lg tracking-[0.06em] kiosk:text-[min(1.2rem,1.15vw)]"
                   >
                     {prompt.action}

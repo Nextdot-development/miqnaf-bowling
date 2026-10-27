@@ -50,7 +50,7 @@ function BallGlyph({ gradientId }: { gradientId: string }) {
   );
 }
 
-type FallbackProps = Pick<BowlingSceneProps, "phase" | "ballDrug" | "lane" | "rollStartedAt" | "lineSeed" | "lineDrug" | "rackResetAt">;
+type FallbackProps = Pick<BowlingSceneProps, "phase" | "ballDrug" | "lane" | "rollStartedAt" | "lineSeed" | "lineAim" | "lineDrug" | "rackResetAt">;
 
 export function LaneFallback2D({
   phase,
@@ -58,6 +58,7 @@ export function LaneFallback2D({
   lane,
   rollStartedAt,
   lineSeed,
+  lineAim = null,
   lineDrug,
   rackResetAt = null,
 }: FallbackProps) {
@@ -81,7 +82,7 @@ export function LaneFallback2D({
             ? performance.now() - rollStartedAt
             : 0;
 
-      const b = ballPose(elapsed, lineSeed === null ? STRAIGHT_LINE : ballLineFor(lineSeed, lineDrug));
+      const b = ballPose(elapsed, lineSeed === null ? STRAIGHT_LINE : ballLineFor(lineSeed, lineDrug, lineAim));
       const pathX = lineDrug ? rackLineX(lineDrug) : 0;
       const bc = project(b.x, b.y, b.z);
       const br = Math.abs(project(b.x, b.y + BALL_RADIUS, b.z).y - bc.y);
@@ -116,7 +117,7 @@ export function LaneFallback2D({
     draw();
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project, phase, rollStartedAt, lineSeed, lineDrug, lane, ballDrug, rackResetAt]);
+  }, [project, phase, rollStartedAt, lineSeed, lineAim, lineDrug, lane, ballDrug, rackResetAt]);
 
   const color = ballColor(ballDrug);
 

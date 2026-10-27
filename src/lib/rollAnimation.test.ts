@@ -42,6 +42,33 @@ describe("roll animation", () => {
     for (const n of ALL_PINS) expect(start(n) * 1000 + 1300).toBeLessThanOrEqual(ROLL_TOTAL_MS);
   });
 
+  it("follows the swipe: left goes out left, right goes out right, straight stays near the middle", () => {
+    for (const drug of CONVENTIONAL_BALLS) {
+      const mid = (aim: number) => ballPose(BALL_TRAVEL_MS * 0.6, ballLineFor(777.7, drug, aim)).x;
+      expect(mid(-1)).toBeLessThan(mid(0) - 0.15);
+      expect(mid(1)).toBeGreaterThan(mid(0) + 0.15);
+      // Wherever it was aimed, it reaches its line through the rack at the head pin.
+      for (const aim of [-1, -0.4, 0, 0.4, 1]) expect(ballPose(BALL_TRAVEL_MS, ballLineFor(777.7, drug, aim)).x).toBeCloseTo(rackLineX(drug), 5);
+    }
+  });
+
+  it("never rolls the ball through a pin that stays up, on any throw or swipe", () => {
+    for (const drug of CONVENTIONAL_BALLS)
+      for (const lane of throwsFor(drug))
+        for (const aim of [-1, -0.5, 0, 0.5, 1]) {
+          const line = ballLineFor(48211.9, drug, aim);
+          for (let ms = 0; ms <= ROLL_TOTAL_MS; ms += 10) {
+            const b = ballPose(ms, line);
+            if (!b.visible || b.y < 0) continue;
+            for (const { number: n } of PINS) {
+              if (lane[n] === "down" || lane[n] === "gone") continue;
+              const p = pinPosition(n);
+              expect(Math.hypot(b.x - p.x, b.z - p.z)).toBeGreaterThanOrEqual(BALL_RADIUS + PIN_MAX_RADIUS * 0.92 - 1e-9);
+            }
+          }
+        }
+  });
+
   it("never rolls the ball through a pin that stays up, on any throw", () => {
     for (const drug of CONVENTIONAL_BALLS) {
       for (const lane of throwsFor(drug))

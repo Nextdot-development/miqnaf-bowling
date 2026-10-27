@@ -200,6 +200,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
                   result={state.result}
                   rollStartedAt={state.rollStartedAt}
                   lineSeed={state.lineSeed}
+                  lineAim={state.lineAim}
                   lineDrug={state.frame === 2 ? state.selectedDrug : therapy}
                   rackResetAt={state.rackResetAt}
                   prompt={prompt}
@@ -222,7 +223,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
                     {prompt.eyebrow && <p className="eyebrow text-brand-gold">{prompt.eyebrow}</p>}
                     <p className="mt-1 text-base font-bold leading-snug sm:text-lg">{prompt.text}</p>
                     {prompt.action && (
-                      <button type="button" onClick={game.roll} className="btn-primary mt-3 px-6 py-2.5 text-base tracking-[0.06em]">
+                      <button type="button" onClick={() => game.roll()} className="btn-primary mt-3 px-6 py-2.5 text-base tracking-[0.06em]">
                         {prompt.action}
                       </button>
                     )}

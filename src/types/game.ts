@@ -98,6 +98,8 @@ export interface GameState {
    * throw, so all take exactly the same path.
    */
   lineSeed: number | null;
+  /** The swipe's direction for the current throw, -1 (left) to 1 (right); null when thrown by the button or keyboard. */
+  lineAim: number | null;
   /** Every pin on the lane before the current throw (a fresh rack, or what the first throw left). */
   rackBefore: LanePins | null;
   /** Result of the throw on the lane right now. */

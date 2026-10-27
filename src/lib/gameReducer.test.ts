@@ -124,7 +124,7 @@ describe("Frame 1", () => {
       expect(s.secondThrow?.drug).toBe(drug);
       expect(s.secondThrow?.lane).toEqual(secondThrowLane(rollLane(drug)));
       expect(s.secondThrow?.pinsDown).toBe(s.firstThrow?.pinsDown);
-      expect(s.lineSeed).toBe(1000); // same line as the first throw
+      expect(s.lineSeed).toBe(3000); // each throw takes its own path
     }
   });
 

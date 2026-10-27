@@ -67,7 +67,7 @@ export function BowlingBall({ color, offsetX = 0, still = false }: BowlingBallPr
     const t = timeline.current;
     const elapsed = still ? 0 : elapsedMs(t, performance.now());
     // Each throw takes its own curved line (fixed by its start time).
-    const line = still || t.lineSeed === null ? STRAIGHT_LINE : ballLineFor(t.lineSeed, t.lineDrug);
+    const line = still || t.lineSeed === null ? STRAIGHT_LINE : ballLineFor(t.lineSeed, t.lineDrug, t.lineAim);
     const pose = ballPose(elapsed, line);
     if (!group.current || !spinner.current) return;
     // The swipe nudges the ball forward; that offset fades out as the roll starts.

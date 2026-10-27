@@ -8,6 +8,8 @@ export interface SceneTimeline {
   rollStartedAt: number | null;
   /** Fixes the ball's curved line (shared by both throws of a session). */
   lineSeed: number | null;
+  /** The swipe's direction for this throw (null: none). */
+  lineAim: number | null;
   /** The first throw's ball: fixes the line through the rack (shared by both throws). */
   lineDrug: DrugId | null;
   /** When the transition's rack reset started (performance.now()), if it has. */

@@ -23,7 +23,7 @@ export type GameAction =
   | { type: "SUBMIT_NAME"; name: string }
   | { type: "SELECT_THERAPY"; drug: DrugId }
   | { type: "START_BOWLING" }
-  | { type: "ROLL"; at: number; instant: boolean }
+  | { type: "ROLL"; at: number; instant: boolean; aim?: number | null }
   | { type: "ROLL_COMPLETE"; rollId: number }
   | { type: "TAKE_SECOND_CHANCE" }
   | { type: "SKIP_SECOND_ATTEMPT" }
@@ -48,6 +48,7 @@ export const initialGameState: GameState = {
   rollInstant: false,
   rackResetAt: null,
   lineSeed: null,
+  lineAim: null,
   rackBefore: null,
   result: null,
   firstThrow: null,
@@ -90,7 +91,7 @@ function laneAfter(state: GameState): LanePins {
   return state.frame === 1 && state.attempts === 2 && state.firstThrow ? secondThrowLane(state.firstThrow.lane) : rollLane(drug);
 }
 
-function startRoll(state: GameState, at: number, instant: boolean): GameState {
+function startRoll(state: GameState, at: number, instant: boolean, aim: number | null = null): GameState {
   const attempts = state.attempts + 1;
   const rolling: GameState = {
     ...state,
@@ -99,8 +100,9 @@ function startRoll(state: GameState, at: number, instant: boolean): GameState {
     rollId: state.rollId + 1,
     rollStartedAt: at,
     rollInstant: instant,
-    // The first throw fixes the line; every later throw reuses it.
-    lineSeed: state.lineSeed ?? at,
+    // Every throw takes its own path, set by the doctor's swipe.
+    lineSeed: at,
+    lineAim: aim,
     rackBefore: state.frame === 1 && attempts === 2 && state.firstThrow ? state.firstThrow.lane : laneBefore(),
     openPin: null,
   };
@@ -153,8 +155,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "ROLL":
       // Frame 1: the first throw, then exactly one more with the same ball. Frame 2: one throw.
       // The second Frame 1 throw starts from the lane too, after TAKE_SECOND_CHANCE hands the ball back.
-      if (stage === "FRAME_1_READY" && state.attempts < 2) return startRoll(state, action.at, action.instant);
-      if (stage === "FRAME_2_READY") return startRoll(state, action.at, action.instant);
+      if (stage === "FRAME_1_READY" && state.attempts < 2) return startRoll(state, action.at, action.instant, action.aim ?? null);
+      if (stage === "FRAME_2_READY") return startRoll(state, action.at, action.instant, action.aim ?? null);
       return state;
 
     case "ROLL_COMPLETE":

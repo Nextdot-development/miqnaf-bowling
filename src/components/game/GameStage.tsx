@@ -43,6 +43,8 @@ interface GameStageProps {
   rollStartedAt: number | null;
   /** Fixes the ball's curved line (shared by both throws of a session). */
   lineSeed?: number | null;
+  /** The swipe's direction for this throw (null: none). */
+  lineAim?: number | null;
   /** The first throw's ball: fixes the line through the rack (shared by both throws). */
   lineDrug?: DrugId | null;
   /** When the transition's rack reset started, if it has. */
@@ -57,7 +59,7 @@ interface GameStageProps {
   /** Every pin's state right now (see laneBefore / rollLane). */
   lane: LanePins;
   /** Start the roll (swipe gesture or keyboard). Omit to disable rolling. */
-  onRoll?: () => void;
+  onRoll?: (aim?: number) => void;
   /** Classes for the lane itself (size / aspect). */
   className?: string;
   /** Classes for the wrapper around the lane and its pin key. */
@@ -76,6 +78,7 @@ export function GameStage({
   result,
   rollStartedAt,
   lineSeed = null,
+  lineAim = null,
   lineDrug = null,
   rackResetAt = null,
   roller,
@@ -116,6 +119,7 @@ export function GameStage({
     lane,
     rollStartedAt,
     lineSeed,
+    lineAim,
     lineDrug,
     rackResetAt,
     interactive,
@@ -134,7 +138,7 @@ export function GameStage({
     >
       {/* 2D lane: the no-WebGL fallback, and the placeholder while 3D loads. */}
       {(!use3D || !sceneReady) && (
-        <LaneFallback2D phase={phase} ballDrug={selectedDrug} lane={lane} rollStartedAt={rollStartedAt} lineSeed={lineSeed} lineDrug={lineDrug} rackResetAt={rackResetAt} />
+        <LaneFallback2D phase={phase} ballDrug={selectedDrug} lane={lane} rollStartedAt={rollStartedAt} lineSeed={lineSeed} lineAim={lineAim} lineDrug={lineDrug} rackResetAt={rackResetAt} />
       )}
       {use3D && (
         <SceneErrorBoundary onError={handleFail}>

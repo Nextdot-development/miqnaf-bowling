@@ -23,6 +23,8 @@ export interface BowlingSceneProps {
   rollStartedAt: number | null;
   /** Fixes the ball's curved line (shared by both throws of a session). */
   lineSeed: number | null;
+  /** The swipe's direction for this throw (null: none). */
+  lineAim?: number | null;
   /** The first throw's ball: fixes the line through the rack (shared by both throws). */
   lineDrug: DrugId | null;
   /** When the transition's rack reset started, if it has. */
@@ -138,14 +140,14 @@ function Lights() {
 }
 
 export default function BowlingScene(props: BowlingSceneProps) {
-  const { phase, ballDrug, lane, rollStartedAt, lineSeed, lineDrug, rackResetAt = null, interactive, onPinSelect, onContextLost, onReady, aimRef, aiming } =
+  const { phase, ballDrug, lane, rollStartedAt, lineSeed, lineAim = null, lineDrug, rackResetAt = null, interactive, onPinSelect, onContextLost, onReady, aimRef, aiming } =
     props;
 
   // The second throw is at the rack exactly as the first left it: no sweep (client request).
   const sweeping = false;
   const strike = Object.values(lane).every((s) => s === "down");
-  const timeline = useRef<SceneTimeline>({ phase, rollStartedAt, lineSeed, lineDrug, rackResetAt, sweeping, strike, aim: aimRef });
-  timeline.current = { phase, rollStartedAt, lineSeed, lineDrug, rackResetAt, sweeping, strike, aim: aimRef };
+  const timeline = useRef<SceneTimeline>({ phase, rollStartedAt, lineSeed, lineAim, lineDrug, rackResetAt, sweeping, strike, aim: aimRef });
+  timeline.current = { phase, rollStartedAt, lineSeed, lineAim, lineDrug, rackResetAt, sweeping, strike, aim: aimRef };
 
   return (
     <SceneTimelineContext.Provider value={timeline}>

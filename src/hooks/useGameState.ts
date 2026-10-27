@@ -61,9 +61,13 @@ export function useGameState(reducedMotion: boolean) {
     [],
   );
 
-  const roll = useCallback(() => {
-    dispatch({ type: "ROLL", at: performance.now(), instant: reducedMotion });
-  }, [reducedMotion]);
+  /** Throw the ball; `aim` is the swipe's direction (-1 left to 1 right), if thrown by a swipe. */
+  const roll = useCallback(
+    (aim?: unknown) => {
+      dispatch({ type: "ROLL", at: performance.now(), instant: reducedMotion, aim: typeof aim === "number" ? aim : null });
+    },
+    [reducedMotion],
+  );
 
   const { unlock } = audio;
   const setSound = useCallback(
